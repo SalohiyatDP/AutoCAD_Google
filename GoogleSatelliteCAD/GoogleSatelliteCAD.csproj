@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{B1D7F4A2-6C3E-4E8A-9F2B-7A1C2D3E4F50}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>GoogleSatelliteCAD</RootNamespace>
+    <AssemblyName>GoogleSatelliteCAD</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <!--
+      ===========================================================================
+      AutoCAD Mechanical 2021 boshqariladigan (managed) assembly'lar joylashgan papka.
+      Standart o'rnatish yo'li quyidagicha bo'ladi. Agar AutoCAD boshqa joyga
+      o'rnatilgan bo'lsa, ushbu qiymatni o'zgartiring yoki MSBuild'ga
+      /p:AutoCADReferencePath=... parametri orqali bering.
+      ===========================================================================
+    -->
+    <AutoCADReferencePath Condition=" '$(AutoCADReferencePath)' == '' ">C:\Program Files\Autodesk\AutoCAD 2021\</AutoCADReferencePath>
+  </PropertyGroup>
+
+  <!-- AutoCAD plaginlar 64-bitli bo'lishi shart (AutoCAD 2021 faqat x64) -->
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+  <!-- ============================ .NET tizim referenslari ============================ -->
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <!-- WPF Sozlamalar oynasi uchun -->
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+  </ItemGroup>
+
+  <!-- ============================ AutoCAD 2021 referenslari ============================
+       MUHIM: Ushbu DLL'lar "Copy Local = False" (Private=False) bo'lishi shart.
+       Aks holda AutoCAD ishga tushganda assembly nizolari (conflict) yuzaga keladi.
+  -->
+  <ItemGroup>
+    <Reference Include="acmgd">
+      <HintPath>$(AutoCADReferencePath)acmgd.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="acdbmgd">
+      <HintPath>$(AutoCADReferencePath)acdbmgd.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="accoremgd">
+      <HintPath>$(AutoCADReferencePath)accoremgd.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="AdWindows">
+      <HintPath>$(AutoCADReferencePath)AdWindows.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="AcWindows">
+      <HintPath>$(AutoCADReferencePath)AcWindows.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+  </ItemGroup>
+
+  <!-- ============================ Loyiha manba fayllari ============================ -->
+  <ItemGroup>
+    <Compile Include="Core\PluginEntry.cs" />
+    <Compile Include="Core\ConfigManager.cs" />
+    <Compile Include="Core\PluginContext.cs" />
+    <Compile Include="Core\Logger.cs" />
+
+    <Compile Include="Projection\Ellipsoid.cs" />
+    <Compile Include="Projection\CoordinateSystem.cs" />
+    <Compile Include="Projection\IProjection.cs" />
+    <Compile Include="Projection\Mercator.cs" />
+    <Compile Include="Projection\Pulkovo1942.cs" />
+    <Compile Include="Projection\CoordinateTransform.cs" />
+
+    <Compile Include="TileEngine\TileInfo.cs" />
+    <Compile Include="TileEngine\TileSystem.cs" />
+    <Compile Include="TileEngine\ITileCache.cs" />
+    <Compile Include="TileEngine\TileCache.cs" />
+    <Compile Include="TileEngine\ITileDownloader.cs" />
+    <Compile Include="TileEngine\TileDownloader.cs" />
+    <Compile Include="TileEngine\TileManager.cs" />
+
+    <Compile Include="Drawing\LayerManager.cs" />
+    <Compile Include="Drawing\RasterManager.cs" />
+    <Compile Include="Drawing\ViewportTracker.cs" />
+
+    <Compile Include="Commands\MapOnCommand.cs" />
+    <Compile Include="Commands\MapOffCommand.cs" />
+    <Compile Include="Commands\CacheClearCommand.cs" />
+
+    <Compile Include="UI\RibbonUI.cs" />
+    <Compile Include="UI\AboutWindow.cs" />
+    <Compile Include="UI\SettingsViewModel.cs" />
+    <Compile Include="UI\SettingsWindow.cs" />
+
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

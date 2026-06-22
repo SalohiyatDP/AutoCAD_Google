@@ -1,0 +1,34 @@
+## Visual Studio / .NET build artifacts
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+*.cache
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+
+## NuGet
+packages/
+*.nupkg
+
+## ReSharper
+_ReSharper*/
+*.DotSettings.user
+
+## OS files
+Thumbs.db
+.DS_Store
+
+## Plugin runtime cache (test paytida yaratiladigan tile kesh)
+Cache/
+*.log
