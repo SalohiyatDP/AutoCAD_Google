@@ -62,9 +62,9 @@ namespace GoogleSatelliteCAD.UI
 
             AddLabel(form, 1, "Koordinata tizimi:");
             _crsCombo = new ComboBox { Margin = new Thickness(0, 6, 0, 6) };
-            foreach (CoordinateSystemType t in (CoordinateSystemType[])Enum.GetValues(typeof(CoordinateSystemType)))
-                _crsCombo.Items.Add(t);
-            _crsCombo.SelectedItem = s.CoordinateSystem;
+            // Foydalanuvchi talabiga ko'ra faqat Web Mercator (EPSG:3857) qo'llab-quvvatlanadi.
+            _crsCombo.Items.Add(CoordinateSystemType.WebMercator_3857);
+            _crsCombo.SelectedIndex = 0;
             PlaceInForm(form, _crsCombo, 1);
 
             AddLabel(form, 2, "Kesh hajmi (MB, 0=cheksiz):");

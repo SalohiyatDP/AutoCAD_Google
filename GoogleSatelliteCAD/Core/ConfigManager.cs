@@ -32,7 +32,7 @@ namespace GoogleSatelliteCAD.Core
 
         /// <summary>Chizma (DWG) ishlatadigan koordinata tizimi.</summary>
         public CoordinateSystemType CoordinateSystem { get; set; } =
-            CoordinateSystemType.Pulkovo1942_GK_Zone12N;
+            CoordinateSystemType.WebMercator_3857;
 
         /// <summary>Parallel ravishda yuklanadigan tilelar soni (yuklab olish oqimlari).</summary>
         public int MaxParallelDownloads { get; set; } = 8;
@@ -86,6 +86,9 @@ namespace GoogleSatelliteCAD.Core
                     using (var fs = File.OpenRead(_settingsFile))
                     {
                         var loaded = (PluginSettings)_serializer.Deserialize(fs);
+                        // Hozircha faqat Web Mercator (EPSG:3857) qo'llab-quvvatlanadi —
+                        // eski sozlamada boshqa tizim saqlangan bo'lsa, uni moslaymiz.
+                        loaded.CoordinateSystem = CoordinateSystemType.WebMercator_3857;
                         Settings = loaded;
                         return loaded;
                     }
