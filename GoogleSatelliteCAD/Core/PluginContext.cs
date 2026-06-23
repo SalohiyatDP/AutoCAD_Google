@@ -72,8 +72,9 @@ namespace GoogleSatelliteCAD.Core
         }
 
         /// <summary>
-        /// Ko'rinishni O'zbekiston hududidagi standart nuqtaga (Toshkent) olib boradi
-        /// va fon xaritani yoqadi. Bo'sh chizmada "xarita ko'rinmayapti" holatini hal qiladi.
+        /// Ko'rinishni O'zbekiston hududidagi standart nuqtaga (Namangan viloyati,
+        /// Kosonsoy tumani) olib boradi va fon xaritani yoqadi. Bo'sh chizmada
+        /// "xarita ko'rinmayapti" holatini hal qiladi.
         /// Asosiy (UI) oqimda, buyruq kontekstida chaqirilishi kerak.
         /// </summary>
         public void GoHome()
@@ -83,7 +84,7 @@ namespace GoogleSatelliteCAD.Core
 
             if (!IsActive) Enable();
 
-            // Standart nuqta (Toshkent) va ~20 km ko'rinish kengligini joriy CRS ga o'tkazamiz.
+            // Standart nuqta (Kosonsoy) va ~20 km ko'rinish kengligini joriy CRS ga o'tkazamiz.
             const double groundWidthMeters = 20000.0;
             double dLon = groundWidthMeters / 2.0 / (111320.0 * Math.Cos(HomeLat * Math.PI / 180.0));
 
@@ -106,7 +107,7 @@ namespace GoogleSatelliteCAD.Core
                     vtr.Height = width;
                     ed.SetCurrentView(vtr);
                 }
-                Logger.Info($"Uyga (Toshkent) o'tildi: markaz drawing=({center.X:F1},{center.Y:F1}).");
+                Logger.Info($"Uyga (Kosonsoy tumani) o'tildi: markaz drawing=({center.X:F1},{center.Y:F1}).");
             }
             catch (Exception ex)
             {
@@ -469,9 +470,9 @@ namespace GoogleSatelliteCAD.Core
         private const double UzSouthLat = 37.1;
         private const double UzNorthLat = 45.65;
 
-        // "Uyga" (GSATHOME) buyrug'i uchun standart nuqta — Toshkent markazi.
-        private const double HomeLon = 69.2797;
-        private const double HomeLat = 41.3111;
+        // "Uyga" (GSATHOME) buyrug'i uchun standart nuqta — Namangan viloyati, Kosonsoy tumani.
+        private const double HomeLon = 71.5503;
+        private const double HomeLat = 41.2456;
 
         /// <summary>.NET Framework 4.8 da double.IsFinite mavjud emas — o'zimiz tekshiramiz.</summary>
         private static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
