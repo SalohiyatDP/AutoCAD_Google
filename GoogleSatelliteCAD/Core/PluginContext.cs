@@ -251,7 +251,10 @@ namespace GoogleSatelliteCAD.Core
                 if (tMinLon >= tMaxLon || tMinLat >= tMaxLat)
                 {
                     // Ko'rinish O'zbekiston hududidan butunlay tashqarida — eski tilelarni tozalaymiz.
-                    Logger.Info("Ko'rinish O'zbekiston hududidan tashqarida — xarita yuklanmadi.");
+                    Logger.Warn($"Ko'rinish O'zbekiston hududidan TASHQARIDA: " +
+                                $"lon {minLon:F3}..{maxLon:F3}, lat {minLat:F3}..{maxLat:F3} " +
+                                $"(ruxsat: lon {UzWestLon}..{UzEastLon}, lat {UzSouthLat}..{UzNorthLat}). " +
+                                "Xaritani ko'rish uchun O'zbekiston hududiga o'ting.");
                     Interlocked.Exchange(ref _pendingPlacements, new List<TilePlacement>());
                     return;
                 }
