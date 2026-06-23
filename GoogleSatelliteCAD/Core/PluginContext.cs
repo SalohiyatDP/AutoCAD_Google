@@ -33,6 +33,10 @@ namespace GoogleSatelliteCAD.Core
         private ViewportTracker _tracker;
         private bool _refreshInProgress;
 
+        // Fon oqimida tayyorlangan, asosiy oqimda (Idle) qo'llanishni kutayotgan
+        // joylashtirishlar. Faqat Interlocked (atomik) orqali yoziladi/o'qiladi.
+        private List<TilePlacement> _pendingPlacements;
+
         /// <summary>Tile yuklash va kesh menejeri.</summary>
         public TileManager TileManager { get; }
 
@@ -92,6 +96,10 @@ namespace GoogleSatelliteCAD.Core
             _tracker.ViewChanged += OnViewChanged;
             _tracker.Start();
 
+            // Yuklab olingan rasterlar faqat ASOSIY oqimda (Idle) chizmaga qo'llanadi.
+            // Bu fon oqimidan AutoCAD/WPF obyektlariga tegishni butunlay yo'q qiladi.
+            Application.Idle += OnApplyPendingPlacements;
+
             Logger.Info("Google Satellite yoqildi.");
             RequestRefresh();
         }
@@ -111,6 +119,8 @@ namespace GoogleSatelliteCAD.Core
             IsActive = false;
 
             _refreshCts?.Cancel();
+            Application.Idle -= OnApplyPendingPlacements;
+            _pendingPlacements = null;
 
             if (_tracker != null)
             {
@@ -277,12 +287,10 @@ namespace GoogleSatelliteCAD.Core
 
                 if (token.IsCancellationRequested) return;
 
-                // 6. Rasterlarni AutoCAD asosiy oqimida joylaymiz.
-                RunInAutoCadContext(() =>
-                {
-                    if (!IsActive || token.IsCancellationRequested) return;
-                    RasterManager.SyncTiles(placements);
-                });
+                // 6. Rasterlarni ASOSIY oqimga uzatamiz. Haqiqiy chizma o'zgarishi
+                //    keyingi Application.Idle hodisasida (OnApplyPendingPlacements) bajariladi.
+                //    Bu fon oqimidan AutoCAD'ga tegmaslikni kafolatlaydi.
+                Interlocked.Exchange(ref _pendingPlacements, placements);
             }
             catch (OperationCanceledException)
             {
@@ -403,19 +411,25 @@ namespace GoogleSatelliteCAD.Core
         }
 
         /// <summary>
-        /// Berilgan amalni AutoCAD asosiy (UI) oqimi kontekstida bajaradi.
-        /// Asinxron yuklashdan keyin chizmani o'zgartirish faqat shu oqimda xavfsiz.
+        /// Application.Idle (ASOSIY oqim) da chaqiriladi. Fon oqimida tayyorlangan
+        /// joylashtirishlar bo'lsa, ularni chizmaga qo'llaydi. Bu yagona joy bo'lib,
+        /// rasterlar shu yerda — har doim asosiy oqimda — yaratiladi.
         /// </summary>
-        private static void RunInAutoCadContext(Action action)
+        private void OnApplyPendingPlacements(object sender, EventArgs e)
         {
+            if (!IsActive) return;
+
+            // Atomik ravishda kutayotgan ro'yxatni olamiz va bo'shatamiz.
+            List<TilePlacement> placements = Interlocked.Exchange(ref _pendingPlacements, null);
+            if (placements == null) return;
+
             try
             {
-                Application.DocumentManager.ExecuteInApplicationContext(
-                    state => action(), null);
+                RasterManager.SyncTiles(placements);
             }
             catch (Exception ex)
             {
-                Logger.Error("AutoCAD kontekstida bajarishda xatolik.", ex);
+                Logger.Error("Rasterlarni chizmaga qo'llashda xatolik.", ex);
             }
         }
 

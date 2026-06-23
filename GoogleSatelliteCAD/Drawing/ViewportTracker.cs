@@ -1,5 +1,4 @@
 using System;
-using System.Threading;
 using Autodesk.AutoCAD.ApplicationServices;
 using GoogleSatelliteCAD.Core;
 
@@ -9,33 +8,38 @@ namespace GoogleSatelliteCAD.Drawing
     /// Model-space ko'rinishidagi o'zgarishlarni (Pan / Zoom) kuzatadi va
     /// <see cref="ViewChanged"/> hodisasini chiqaradi.
     ///
-    /// AutoCAD'da to'g'ridan-to'g'ri "view changed" hodisasi yo'q. Pan/Zoom
-    /// amalga oshganda VIEWCTR (ko'rinish markazi) va VIEWSIZE (ko'rinish balandligi)
-    /// tizim o'zgaruvchilari o'zgaradi. Shu sababli
-    /// <c>Application.SystemVariableChanged</c> hodisasiga ulanamiz.
+    /// MUHIM (thread-safety): AutoCAD va uning WPF Ribbon obyektlari faqat
+    /// asosiy (UI) oqimga tegishli. Shuning uchun bu kuzatuvchi HECH QANDAY
+    /// fon oqimi yoki taymer ishlatmaydi — barcha ish AutoCAD'ning
+    /// <c>Application.Idle</c> hodisasi orqali asosiy oqimda bajariladi.
     ///
-    /// Ko'p marta ketma-ket chaqirilishning oldini olish uchun kechiktirish
-    /// (debounce) qo'llaniladi — bu performansni saqlaydi.
+    /// Ishlash printsipi:
+    ///   1. Pan/Zoom bo'lganda VIEWCTR/VIEWSIZE tizim o'zgaruvchilari o'zgaradi
+    ///      (SystemVariableChanged — asosiy oqimda chaqiriladi).
+    ///   2. "Yangilash kerak" bayrog'i o'rnatiladi va vaqt belgilanadi.
+    ///   3. Idle hodisasida (asosiy oqim), oxirgi o'zgarishdan beri kechikish
+    ///      (debounce) o'tgan bo'lsa, ViewChanged chiqariladi.
     /// </summary>
     public sealed class ViewportTracker : IDisposable
     {
         // Ko'rinish o'zgarganda o'zgaradigan tizim o'zgaruvchilari.
         private static readonly string[] ViewVars = { "VIEWCTR", "VIEWSIZE", "VIEWDIR", "TARGET", "CVPORT" };
 
-        private const int DebounceMs = 250;
+        // Ketma-ket o'zgarishlarni birlashtirish uchun kechikish.
+        private static readonly TimeSpan Debounce = TimeSpan.FromMilliseconds(300);
 
         private readonly Document _doc;
-        private readonly Timer _debounceTimer;
         private bool _started;
         private bool _disposed;
+        private volatile bool _pending;
+        private DateTime _pendingSinceUtc;
 
-        /// <summary>Ko'rinish (Pan/Zoom) o'zgarganda chiqariladigan hodisa.</summary>
+        /// <summary>Ko'rinish (Pan/Zoom) o'zgarganda chiqariladigan hodisa (asosiy oqimda).</summary>
         public event EventHandler ViewChanged;
 
         public ViewportTracker(Document doc)
         {
             _doc = doc ?? throw new ArgumentNullException(nameof(doc));
-            _debounceTimer = new Timer(OnDebounceElapsed, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         /// <summary>Kuzatishni boshlaydi.</summary>
@@ -43,6 +47,7 @@ namespace GoogleSatelliteCAD.Drawing
         {
             if (_started) return;
             Application.SystemVariableChanged += OnSystemVariableChanged;
+            Application.Idle += OnIdle;
             _started = true;
             Logger.Info("Ko'rinish kuzatuvchi (ViewportTracker) ishga tushdi.");
         }
@@ -52,34 +57,38 @@ namespace GoogleSatelliteCAD.Drawing
         {
             if (!_started) return;
             Application.SystemVariableChanged -= OnSystemVariableChanged;
+            Application.Idle -= OnIdle;
             _started = false;
         }
 
         private void OnSystemVariableChanged(object sender, SystemVariableChangedEventArgs e)
         {
-            // Faqat ko'rinishga aloqador o'zgaruvchilarga e'tibor beramiz.
+            // Bu hodisa asosiy oqimda chiqariladi — faqat bayroq o'rnatamiz.
             for (int i = 0; i < ViewVars.Length; i++)
             {
                 if (string.Equals(e.Name, ViewVars[i], StringComparison.OrdinalIgnoreCase))
                 {
-                    // Debounce: taymerni qayta ishga tushiramiz.
-                    _debounceTimer.Change(DebounceMs, Timeout.Infinite);
+                    _pending = true;
+                    _pendingSinceUtc = DateTime.UtcNow;
                     return;
                 }
             }
         }
 
-        private void OnDebounceElapsed(object state)
+        private void OnIdle(object sender, EventArgs e)
         {
-            // AutoCAD obyektlariga faqat asosiy oqimda murojaat qilish xavfsiz.
+            // Idle asosiy oqimda, tez-tez chaqiriladi — shuning uchun arzon tekshiruv.
+            if (!_pending) return;
+            if (DateTime.UtcNow - _pendingSinceUtc < Debounce) return;
+
+            _pending = false;
             try
             {
-                Application.DocumentManager.ExecuteInApplicationContext(
-                    _ => ViewChanged?.Invoke(this, EventArgs.Empty), null);
+                ViewChanged?.Invoke(this, EventArgs.Empty);
             }
-            catch
+            catch (Exception ex)
             {
-                // Hujjat yopilgan bo'lishi mumkin — e'tibor bermaymiz.
+                Logger.Error("ViewChanged ishlovchisida xatolik.", ex);
             }
         }
 
@@ -88,7 +97,6 @@ namespace GoogleSatelliteCAD.Drawing
             if (_disposed) return;
             _disposed = true;
             Stop();
-            _debounceTimer?.Dispose();
         }
     }
 }
