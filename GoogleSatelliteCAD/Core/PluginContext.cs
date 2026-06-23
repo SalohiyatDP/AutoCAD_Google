@@ -524,8 +524,14 @@ namespace GoogleSatelliteCAD.Core
         private static double Clamp(double v, double min, double max) => v < min ? min : (v > max ? max : v);
 
         /// <summary>
-        /// Joriy model-space ko'rinishini o'qib, drawing koordinatalaridagi
-        /// ko'rinish to'rtburchagi va ekran piksel o'lchamini qaytaradi.
+        /// Joriy model-space ko'rinishini o'qib, WCS (model) koordinatalaridagi
+        /// ko'rinish to'rtburchagini va ekran piksel o'lchamini qaytaradi.
+        ///
+        /// MUHIM: ViewTableRecord.CenterPoint/Width/Height qiymatlari DCS (Display
+        /// Coordinate System) da beriladi. Rasterlar esa WCS (model) da joylanadi.
+        /// UCS faol bo'lsa yoki ko'rinish burilgan/qiya bo'lsa, DCS != WCS bo'ladi va
+        /// to'g'ridan-to'g'ri ishlatilsa tasvir noto'g'ri joyga (masalan chap-yuqoriga)
+        /// tushadi. Shuning uchun DCS burchaklarini WCS ga o'tkazamiz.
         /// </summary>
         private ViewWindow ReadCurrentView()
         {
@@ -535,12 +541,35 @@ namespace GoogleSatelliteCAD.Core
             Editor ed = doc.Editor;
             using (ViewTableRecord vtr = ed.GetCurrentView())
             {
-                // CenterPoint DCS (Display Coordinate System) da. Yuqoridan ko'rinish (plan)
-                // uchun bu WCS X/Y bilan mos keladi.
-                double cx = vtr.CenterPoint.X;
-                double cy = vtr.CenterPoint.Y;
+                double cxDcs = vtr.CenterPoint.X;
+                double cyDcs = vtr.CenterPoint.Y;
                 double halfW = vtr.Width / 2.0;
                 double halfH = vtr.Height / 2.0;
+
+                // DCS -> WCS o'tkazish matritsasi (ko'rinish yo'nalishi, nishoni va burilishidan).
+                Matrix3d dcsToWcs =
+                    Matrix3d.Rotation(-vtr.ViewTwist, vtr.ViewDirection, vtr.Target) *
+                    Matrix3d.Displacement(vtr.Target - Point3d.Origin) *
+                    Matrix3d.PlaneToWorld(vtr.ViewDirection);
+
+                // Ko'rinishning to'rtta burchagini DCS dan WCS ga o'tkazamiz.
+                Point3d[] corners =
+                {
+                    new Point3d(cxDcs - halfW, cyDcs - halfH, 0.0).TransformBy(dcsToWcs),
+                    new Point3d(cxDcs + halfW, cyDcs - halfH, 0.0).TransformBy(dcsToWcs),
+                    new Point3d(cxDcs + halfW, cyDcs + halfH, 0.0).TransformBy(dcsToWcs),
+                    new Point3d(cxDcs - halfW, cyDcs + halfH, 0.0).TransformBy(dcsToWcs)
+                };
+
+                double minX = double.MaxValue, minY = double.MaxValue;
+                double maxX = double.MinValue, maxY = double.MinValue;
+                foreach (Point3d p in corners)
+                {
+                    if (p.X < minX) minX = p.X;
+                    if (p.X > maxX) maxX = p.X;
+                    if (p.Y < minY) minY = p.Y;
+                    if (p.Y > maxY) maxY = p.Y;
+                }
 
                 // Ekran piksel o'lchami (SCREENSIZE tizim o'zgaruvchisi).
                 int pxWidth = 1024;
@@ -553,10 +582,10 @@ namespace GoogleSatelliteCAD.Core
 
                 return new ViewWindow
                 {
-                    MinX = cx - halfW,
-                    MinY = cy - halfH,
-                    MaxX = cx + halfW,
-                    MaxY = cy + halfH,
+                    MinX = minX,
+                    MinY = minY,
+                    MaxX = maxX,
+                    MaxY = maxY,
                     PixelWidth = pxWidth
                 };
             }
