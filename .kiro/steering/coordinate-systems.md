@@ -26,3 +26,20 @@ Plagin foydalanuvchi uchun **ikki** koordinata tizimini qo'llab-quvvatlaydi
 - Bo'sh/yangi chizma (0,0 atrofida) georeferensiyalanmagan — fon xarita ko'rinmaydi.
 - WGS84 Geographic/UTM proyeksiyalari kodda bor, lekin UI'da yashirilgan;
   saqlangan sozlama shulardan biri bo'lsa, avtomatik Web Mercator'ga moslanadi.
+
+
+## Hududiy cheklov
+
+Foydalanuvchi talabiga ko'ra plagin **faqat O'zbekiston Respublikasi hududidagi**
+tilelarni yuklaydi (butun dunyo xaritasi yuklanmaydi). Ko'rinish chegarasi
+O'zbekiston chegara to'rtburchagi bilan kesib olinadi (PluginContext dagi
+`UzWestLon/UzEastLon/UzSouthLat/UzNorthLat` konstantalari, taxminan
+55.9–73.25°E, 37.1–45.65°N). Ko'rinish bu hududdan tashqarida bo'lsa, xarita
+yuklanmaydi va mavjud tilelar tozalanadi.
+
+## About oynasi
+
+Mualliflar/tashkilot (AboutWindow.cs):
+- Dasturchi: Abdujabborov Sherzod Jahongir o'g'li
+- G'oya muallifi: Karimbekov Asadbek Nasibbek o'g'li
+- Tashkilot: Davlat Kadastrlari Palatasi, Kosonsoy tuman filiali

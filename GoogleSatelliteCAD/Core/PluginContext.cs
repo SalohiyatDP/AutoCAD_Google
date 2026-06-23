@@ -240,8 +240,23 @@ namespace GoogleSatelliteCAD.Core
                 zoom = Math.Max(0, Math.Min(zoom, maxZoom));
                 _lastZoom = zoom;
 
-                // 3. Kerakli tilelar ro'yxatini tuzamiz.
-                List<TileInfo> tiles = TileSystem.GetTilesForBounds(minLon, minLat, maxLon, maxLat, zoom).ToList();
+                // 3. Faqat O'ZBEKISTON RESPUBLIKASI hududidagi tilelarni yuklaymiz.
+                //    Ko'rinish chegarasini O'zbekiston chegara to'rtburchagi bilan kesib olamiz —
+                //    butun (umumiy) xarita yuklanmaydi, faqat mamlakat hududi ko'rsatiladi.
+                double tMinLon = Math.Max(minLon, UzWestLon);
+                double tMaxLon = Math.Min(maxLon, UzEastLon);
+                double tMinLat = Math.Max(minLat, UzSouthLat);
+                double tMaxLat = Math.Min(maxLat, UzNorthLat);
+
+                if (tMinLon >= tMaxLon || tMinLat >= tMaxLat)
+                {
+                    // Ko'rinish O'zbekiston hududidan butunlay tashqarida — eski tilelarni tozalaymiz.
+                    Logger.Info("Ko'rinish O'zbekiston hududidan tashqarida — xarita yuklanmadi.");
+                    Interlocked.Exchange(ref _pendingPlacements, new List<TilePlacement>());
+                    return;
+                }
+
+                List<TileInfo> tiles = TileSystem.GetTilesForBounds(tMinLon, tMinLat, tMaxLon, tMaxLat, zoom).ToList();
                 if (tiles.Count == 0) return;
 
                 // Xavfsizlik chegarasi: juda ko'p tile bo'lsa (koordinata mosligi buzilgan
@@ -398,6 +413,13 @@ namespace GoogleSatelliteCAD.Core
 
         /// <summary>Bir yangilashda joylashtiriladigan maksimal tile soni (xavfsizlik chegarasi).</summary>
         private const int MaxTilesPerRefresh = 800;
+
+        // O'zbekiston Respublikasi taxminiy chegara to'rtburchagi (WGS84, gradus).
+        // Faqat shu hudud ichidagi tilelar yuklanadi — butun dunyo xaritasi yuklanmaydi.
+        private const double UzWestLon = 55.9;
+        private const double UzEastLon = 73.25;
+        private const double UzSouthLat = 37.1;
+        private const double UzNorthLat = 45.65;
 
         /// <summary>.NET Framework 4.8 da double.IsFinite mavjud emas — o'zimiz tekshiramiz.</summary>
         private static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
