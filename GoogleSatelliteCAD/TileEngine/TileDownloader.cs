@@ -45,16 +45,50 @@ namespace GoogleSatelliteCAD.TileEngine
             return client;
         }
 
-        /// <summary>URL shablonini tile qiymatlari bilan to'ldiradi.</summary>
+        /// <summary>
+        /// URL shablonini tile qiymatlari bilan to'ldiradi.
+        /// Google tile serveri uchun subdomenni (mt0..mt3) aylantirib turadi —
+        /// bu yukni taqsimlaydi va vaqtinchalik 4xx/5xx javoblar ehtimolini kamaytiradi.
+        /// {s} o'rinbosari ham qo'llab-quvvatlanadi.
+        /// </summary>
         public string BuildUrl(TileInfo tile)
         {
-            return _urlTemplate
+            int sub = ((tile.X + tile.Y) % 4 + 4) % 4; // 0..3
+            string url = _urlTemplate
                 .Replace("{x}", tile.X.ToString())
                 .Replace("{y}", tile.Y.ToString())
-                .Replace("{z}", tile.Z.ToString());
+                .Replace("{z}", tile.Z.ToString())
+                .Replace("{s}", sub.ToString());
+
+            // Standart Google shabloni "mt1." ishlatadi — uni aylanma subdomenga almashtiramiz.
+            if (url.Contains("mt1.google.com"))
+                url = url.Replace("mt1.google.com", "mt" + sub + ".google.com");
+
+            return url;
         }
 
         public async Task<byte[]> DownloadAsync(TileInfo tile, CancellationToken token)
+        {
+            // Bitta vaqtinchalik nosozlikda dastur xaritani umuman ko'rsatmasligining
+            // oldini olish uchun bir marta qayta urinib ko'ramiz.
+            const int maxAttempts = 2;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                if (token.IsCancellationRequested) return null;
+
+                byte[] data = await TryDownloadOnceAsync(tile, token).ConfigureAwait(false);
+                if (data != null) return data;
+
+                if (attempt < maxAttempts && !token.IsCancellationRequested)
+                {
+                    try { await Task.Delay(200, token).ConfigureAwait(false); }
+                    catch (OperationCanceledException) { return null; }
+                }
+            }
+            return null;
+        }
+
+        private async Task<byte[]> TryDownloadOnceAsync(TileInfo tile, CancellationToken token)
         {
             string url = BuildUrl(tile);
             try

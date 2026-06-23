@@ -268,37 +268,65 @@ namespace GoogleSatelliteCAD.Core
 
                 if (token.IsCancellationRequested) return;
 
-                // 5. Har bir tile uchun joylashtirish geometriyasini hisoblaymiz.
+                // 5. UNIFORM LOKAL O'XSHASHLIK (similarity) TRANSFORMI bilan joylashtirish.
+                //    Web Mercator tilelari mercator metrlarida ideal kvadrat to'r hosil qiladi.
+                //    Ularni drawing CRS ga joylash uchun ko'rinish MARKAZIDA hisoblangan YAGONA
+                //    chiziqli transform (masshtab + burilish) ishlatamiz. Natijada barcha tilelar
+                //    bir xil o'lcham va yo'nalishda bo'lib, mukammal, uzluksiz to'r hosil qiladi —
+                //    Pulkovo'da ham bo'shliq/qoplama va qiyshayish bo'lmaydi. Web Mercator'da
+                //    transform birlik (identity) bo'lib, joylashtirish piksel-aniq mos keladi.
+                double cx = (view.MinX + view.MaxX) / 2.0;
+                double cy = (view.MinY + view.MaxY) / 2.0;
+                GeoPoint refGeo = Transform.DrawingToGeographic(cx, cy);
+                if (!IsValidGeo(refGeo)) return;
+
+                double refMx, refMy;
+                Mercator.LonLatToMeters(refGeo.Lon, refGeo.Lat, out refMx, out refMy);
+
+                // Mercator metr -> drawing chiziqli transformini markazda sonli usulda topamiz.
+                // (Mercator ham, Pulkovo ham konform — bu transform masshtab + burilishdan iborat.)
+                const double delta = 1.0; // 1 mercator metr
+                DrawingPoint p0 = DrawingFromMercator(refMx, refMy);
+                DrawingPoint pE = DrawingFromMercator(refMx + delta, refMy);
+                DrawingPoint pN = DrawingFromMercator(refMx, refMy + delta);
+
+                double mxx = (pE.X - p0.X) / delta; // sharq -> drawing X
+                double myx = (pE.Y - p0.Y) / delta; // sharq -> drawing Y
+                double mxy = (pN.X - p0.X) / delta; // shimol -> drawing X
+                double myy = (pN.Y - p0.Y) / delta; // shimol -> drawing Y
+
+                if (!IsFinite(mxx) || !IsFinite(myx) || !IsFinite(mxy) || !IsFinite(myy)
+                    || !IsFinite(p0.X) || !IsFinite(p0.Y))
+                {
+                    Logger.Warn("Lokal transformni hisoblab bo'lmadi (yaroqsiz qiymatlar).");
+                    return;
+                }
+
                 var placements = new List<TilePlacement>(downloaded.Count);
                 foreach (DownloadedTile dt in downloaded)
                 {
                     if (dt.FilePath == null) continue;
 
-                    TileBounds b = TileSystem.GetTileGeoBounds(dt.Tile);
+                    // Tile'ning Web Mercator chegaralari (metr) — uniform to'r.
+                    double tw, te, ts, tn;
+                    TileMercatorBounds(dt.Tile, out tw, out te, out ts, out tn);
 
-                    // Tile burchaklarini drawing CRS ga qaytaramiz (affin joylashtirish uchun).
-                    DrawingPoint dOrigin = Transform.GeographicToDrawing(b.WestLon, b.SouthLat);     // pastki-chap
-                    DrawingPoint dLowerRight = Transform.GeographicToDrawing(b.EastLon, b.SouthLat);
-                    DrawingPoint dUpperLeft = Transform.GeographicToDrawing(b.WestLon, b.NorthLat);
+                    double ox = tw - refMx; // tile pastki-chap, markazga nisbatan (sharq)
+                    double oy = ts - refMy; // (shimol)
 
-                    // Hisoblangan koordinatalar haqiqiy (chekli) ekanini tekshiramiz.
-                    if (!IsValidPoint(dOrigin) || !IsValidPoint(dLowerRight) || !IsValidPoint(dUpperLeft))
-                        continue;
+                    var origin = new Point3d(
+                        p0.X + mxx * ox + mxy * oy,
+                        p0.Y + myx * ox + myy * oy,
+                        0.0);
 
-                    Point3d origin = ToPoint(dOrigin);
-                    Vector3d uVec = ToPoint(dLowerRight) - origin; // gorizontal (rasm kengligi)
-                    Vector3d vVec = ToPoint(dUpperLeft) - origin;  // vertikal (rasm balandligi)
+                    double dw = te - tw; // tile kengligi (mercator metr)
+                    double dh = tn - ts; // tile balandligi (mercator metr)
 
-                    // Vektorlar nol bo'lmasligi va aql bovar qiladigan kattalikda bo'lishi kerak.
-                    if (!IsValidVector(uVec) || !IsValidVector(vVec))
-                        continue;
+                    var uVec = new Vector3d(mxx * dw, myx * dw, 0.0); // gorizontal (kenglik)
+                    var vVec = new Vector3d(mxy * dh, myy * dh, 0.0); // vertikal (balandlik)
 
-                    // Buzilish (shear/aspect) filtri: RasterImage faqat affin (parallelogramm)
-                    // joylashtirishni qo'llab-quvvatlaydi. Gauss-Kruger (Pulkovo) o'z zonasidan
-                    // uzoqda tilelarni qattiq qiyshaytiradi — bunday tilelar chizilsa "chalkashlik"
-                    // hosil bo'ladi. Shu sababli juda cho'zilgan yoki qiyshaygan tilelarni
-                    // o'tkazib yuboramiz. (Web Mercator'da barcha tilelar ideal kvadrat — o'tadi.)
-                    if (!IsAffineFriendly(uVec, vVec))
+                    if (!IsFinite(origin.X) || !IsFinite(origin.Y)
+                        || !IsValidVector(uVec) || !IsValidVector(vVec))
                         continue;
 
                     placements.Add(new TilePlacement
@@ -366,9 +394,6 @@ namespace GoogleSatelliteCAD.Core
             return Math.Log(initialResolution / metersPerPixelView, 2.0);
         }
 
-        /// <summary>WGS84 -> drawing natijasini AutoCAD Point3d ga o'giradi.</summary>
-        private static Point3d ToPoint(DrawingPoint p) => new Point3d(p.X, p.Y, 0.0);
-
         // ---- Haqiqiylik (validatsiya) yordamchilari ----
 
         /// <summary>Bir yangilashda joylashtiriladigan maksimal tile soni (xavfsizlik chegarasi).</summary>
@@ -385,12 +410,32 @@ namespace GoogleSatelliteCAD.Core
                    && g.Lat >= -90.0 && g.Lat <= 90.0;
         }
 
-        /// <summary>Chizma nuqtasi chekli va aql bovar qiladigan kattalikda ekanini tekshiradi.</summary>
-        private static bool IsValidPoint(DrawingPoint p)
+        /// <summary>
+        /// Web Mercator metr koordinatasini joriy CRS chizma koordinatasiga o'tkazadi
+        /// (mercator -> lon/lat -> drawing). Uniform transformni hisoblashda ishlatiladi.
+        /// </summary>
+        private DrawingPoint DrawingFromMercator(double mx, double my)
         {
-            const double limit = 1e12; // o'ta katta koordinatalar raster mexanizmini qulatadi
-            return IsFinite(p.X) && IsFinite(p.Y)
-                   && Math.Abs(p.X) < limit && Math.Abs(p.Y) < limit;
+            double lon, lat;
+            Mercator.MetersToLonLat(mx, my, out lon, out lat);
+            return Transform.GeographicToDrawing(lon, lat);
+        }
+
+        /// <summary>
+        /// Tile'ning Web Mercator (EPSG:3857) chegaralarini metrlarda qaytaradi.
+        /// Tilelar mercator metrlarida ideal kvadrat to'r tashkil etadi.
+        /// </summary>
+        private static void TileMercatorBounds(TileInfo t, out double west, out double east,
+                                               out double south, out double north)
+        {
+            double half = Math.PI * Mercator.EarthRadius;   // ~20037508.34
+            double world = 2.0 * half;
+            double n = TileSystem.MapSizeTiles(t.Z);
+
+            west = -half + t.X / n * world;
+            east = -half + (t.X + 1) / n * world;
+            north = half - t.Y / n * world;          // Y indeks pastga o'sadi
+            south = half - (t.Y + 1) / n * world;
         }
 
         /// <summary>Joylashtirish vektori nol bo'lmagan, chekli va o'ta katta emasligini tekshiradi.</summary>
@@ -399,29 +444,6 @@ namespace GoogleSatelliteCAD.Core
             if (!IsFinite(v.X) || !IsFinite(v.Y) || !IsFinite(v.Z)) return false;
             double len = v.Length;
             return len > 1e-6 && len < 1e10;
-        }
-
-        /// <summary>
-        /// Tile affin (parallelogramm) joylashtirishga yaroqlimi — ya'ni kam qiyshaygan
-        /// va cho'zilmaganligini tekshiradi. Bu Gauss-Kruger zonasidan uzoqdagi qattiq
-        /// buzilgan tilelarni filtrlaydi (Web Mercator'da har doim true).
-        /// </summary>
-        private static bool IsAffineFriendly(Vector3d u, Vector3d v)
-        {
-            double uLen = u.Length;
-            double vLen = v.Length;
-            if (uLen < 1e-9 || vLen < 1e-9) return false;
-
-            // 1) Tomonlar nisbati ~1 ga yaqin bo'lsin (cho'zilmagan).
-            double ratio = uLen / vLen;
-            if (ratio < 0.5 || ratio > 2.0) return false;
-
-            // 2) U va V vektorlari deyarli perpendikulyar bo'lsin (kam qiyshaygan).
-            //    cos(burchak) = (u·v)/(|u||v|); perpendikulyar uchun ~0.
-            double cos = Math.Abs(u.DotProduct(v) / (uLen * vLen));
-            if (cos > 0.34) return false; // 90° ± ~20° doirasida
-
-            return true;
         }
 
         private static double Clamp(double v, double min, double max) => v < min ? min : (v > max ? max : v);
