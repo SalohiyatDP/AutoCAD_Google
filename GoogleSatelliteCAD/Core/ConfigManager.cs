@@ -86,9 +86,13 @@ namespace GoogleSatelliteCAD.Core
                     using (var fs = File.OpenRead(_settingsFile))
                     {
                         var loaded = (PluginSettings)_serializer.Deserialize(fs);
-                        // Hozircha faqat Web Mercator (EPSG:3857) qo'llab-quvvatlanadi —
-                        // eski sozlamada boshqa tizim saqlangan bo'lsa, uni moslaymiz.
-                        loaded.CoordinateSystem = CoordinateSystemType.WebMercator_3857;
+                        // Qo'llab-quvvatlanadigan tizimlar: Web Mercator (EPSG:3857) va
+                        // Pulkovo 1942 GK Zona 12N. Boshqasi saqlangan bo'lsa, Web Mercator'ga moslaymiz.
+                        if (loaded.CoordinateSystem != CoordinateSystemType.WebMercator_3857
+                            && loaded.CoordinateSystem != CoordinateSystemType.Pulkovo1942_GK_Zone12N)
+                        {
+                            loaded.CoordinateSystem = CoordinateSystemType.WebMercator_3857;
+                        }
                         Settings = loaded;
                         return loaded;
                     }

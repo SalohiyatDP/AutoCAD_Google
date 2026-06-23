@@ -62,9 +62,15 @@ namespace GoogleSatelliteCAD.UI
 
             AddLabel(form, 1, "Koordinata tizimi:");
             _crsCombo = new ComboBox { Margin = new Thickness(0, 6, 0, 6) };
-            // Foydalanuvchi talabiga ko'ra faqat Web Mercator (EPSG:3857) qo'llab-quvvatlanadi.
+            // Foydalanuvchi ikki tizimda ishlaydi:
+            //  - Web Mercator (EPSG:3857): umumiy/keng hudud uchun.
+            //  - Pulkovo 1942 GK Zona 12N: aniq (haqiqiy yer metrlari) lokal ish uchun.
             _crsCombo.Items.Add(CoordinateSystemType.WebMercator_3857);
-            _crsCombo.SelectedIndex = 0;
+            _crsCombo.Items.Add(CoordinateSystemType.Pulkovo1942_GK_Zone12N);
+            _crsCombo.SelectedItem =
+                s.CoordinateSystem == CoordinateSystemType.Pulkovo1942_GK_Zone12N
+                    ? CoordinateSystemType.Pulkovo1942_GK_Zone12N
+                    : CoordinateSystemType.WebMercator_3857;
             PlaceInForm(form, _crsCombo, 1);
 
             AddLabel(form, 2, "Kesh hajmi (MB, 0=cheksiz):");
