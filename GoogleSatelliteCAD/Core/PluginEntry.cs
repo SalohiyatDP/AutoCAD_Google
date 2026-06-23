@@ -3,6 +3,10 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Runtime;
 using GoogleSatelliteCAD.UI;
 
+// "Exception" nomi System va Autodesk.AutoCAD.Runtime ikkalasida ham mavjud.
+// Bu yerda har doim .NET ning System.Exception ini nazarda tutamiz (CS0104 ni oldini oladi).
+using Exception = System.Exception;
+
 namespace GoogleSatelliteCAD.Core
 {
     /// <summary>
