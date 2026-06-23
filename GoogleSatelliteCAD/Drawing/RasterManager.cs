@@ -250,15 +250,28 @@ namespace GoogleSatelliteCAD.Drawing
                 if (_placed.Count == 0) return;
 
                 var sortId = btr.DrawOrderTableId;
-                if (sortId.IsNull) return;
+                if (sortId.IsNull)
+                {
+                    Logger.Warn("DrawOrderTableId topilmadi — chizish tartibini o'rnatib bo'lmadi.");
+                    return;
+                }
 
                 var sort = (DrawOrderTable)tr.GetObject(sortId, OpenMode.ForWrite);
                 var ids = new ObjectIdCollection();
                 foreach (PlacedEntity placed in _placed.Values)
                 {
-                    if (!placed.RasterId.IsNull) ids.Add(placed.RasterId);
+                    // Faqat yaroqli, o'chirilmagan rasterlarni qo'shamiz.
+                    if (!placed.RasterId.IsNull && !placed.RasterId.IsErased)
+                        ids.Add(placed.RasterId);
                 }
-                if (ids.Count > 0) sort.MoveToBottom(ids);
+
+                if (ids.Count > 0)
+                {
+                    // Barcha satellite rasterlarini chizish tartibida eng pastga (fonga) tushiramiz,
+                    // shunda foydalanuvchi chizgan obyektlar har doim xarita USTIDA ko'rinadi.
+                    sort.MoveToBottom(ids);
+                    Logger.Info($"DrawOrder: {ids.Count} ta raster fonga (eng pastga) tushirildi.");
+                }
             }
             catch (Exception ex)
             {

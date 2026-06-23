@@ -37,6 +37,9 @@ namespace GoogleSatelliteCAD.Core
         // joylashtirishlar. Faqat Interlocked (atomik) orqali yoziladi/o'qiladi.
         private List<TilePlacement> _pendingPlacements;
 
+        // Oxirgi qo'llangan zoom darajasi (gisterezis uchun). -1 = hali aniqlanmagan.
+        private int _lastZoom = -1;
+
         /// <summary>Tile yuklash va kesh menejeri.</summary>
         public TileManager TileManager { get; }
 
@@ -64,6 +67,7 @@ namespace GoogleSatelliteCAD.Core
         public void RebuildTransform()
         {
             Transform = CoordinateTransform.Create(ConfigManager.Instance.Settings.CoordinateSystem);
+            _lastZoom = -1; // CRS o'zgardi — zoom gisterezisini tiklaymiz.
             Logger.Info("Koordinata tizimi yangilandi: " + ConfigManager.Instance.Settings.CoordinateSystem);
         }
 
@@ -90,6 +94,7 @@ namespace GoogleSatelliteCAD.Core
             }
 
             IsActive = true;
+            _lastZoom = -1;
 
             // Pan/Zoom hodisalarini kuzatuvchini ulaymiz.
             _tracker = new ViewportTracker(doc);
@@ -191,15 +196,17 @@ namespace GoogleSatelliteCAD.Core
 
             try
             {
-                // 1. Ko'rinishning to'rt burchagini drawing CRS dan WGS84 (lon/lat) ga o'tkazamiz.
-                GeoPoint ll = Transform.DrawingToGeographic(view.MinX, view.MinY);
-                GeoPoint ur = Transform.DrawingToGeographic(view.MaxX, view.MaxY);
+                // 1. Ko'rinishning TO'RTTA burchagini drawing CRS dan WGS84 (lon/lat) ga o'tkazamiz.
+                //    Pulkovo kabi tizimlarda meridian konvergensiyasi tufayli ko'rinish geografik
+                //    jihatdan biroz burilgan bo'ladi — shuning uchun faqat diagonal ikki burchak
+                //    yetarli emas, to'rttala burchakdan geografik chegara (bbox) quramiz.
+                //    Bu chegarani BARQAROR qiladi (panda "sakrashni" kamaytiradi) va to'liq qoplaydi.
+                GeoPoint c1 = Transform.DrawingToGeographic(view.MinX, view.MinY);
+                GeoPoint c2 = Transform.DrawingToGeographic(view.MaxX, view.MaxY);
+                GeoPoint c3 = Transform.DrawingToGeographic(view.MaxX, view.MinY);
+                GeoPoint c4 = Transform.DrawingToGeographic(view.MinX, view.MaxY);
 
-                // MUHIM: chizma tanlangan koordinata tizimida geografik joylashtirilmagan
-                // bo'lsa, natija haqiqiy emas (NaN yoki diapazondan tashqari) bo'lishi mumkin.
-                // Bunday qiymatlarni AutoCAD raster mexanizmiga uzatish dasturni
-                // qulatadi (Access Violation). Shu sababli oldindan tekshiramiz.
-                if (!IsValidGeo(ll) || !IsValidGeo(ur))
+                if (!IsValidGeo(c1) || !IsValidGeo(c2) || !IsValidGeo(c3) || !IsValidGeo(c4))
                 {
                     Logger.Warn(
                         "Joriy ko'rinish tanlangan koordinata tizimida (" + Transform.Name +
@@ -210,18 +217,28 @@ namespace GoogleSatelliteCAD.Core
                     return;
                 }
 
-                double minLon = Math.Min(ll.Lon, ur.Lon);
-                double maxLon = Math.Max(ll.Lon, ur.Lon);
-                double minLat = Math.Min(ll.Lat, ur.Lat);
-                double maxLat = Math.Max(ll.Lat, ur.Lat);
+                double minLon = Math.Min(Math.Min(c1.Lon, c2.Lon), Math.Min(c3.Lon, c4.Lon));
+                double maxLon = Math.Max(Math.Max(c1.Lon, c2.Lon), Math.Max(c3.Lon, c4.Lon));
+                double minLat = Math.Min(Math.Min(c1.Lat, c2.Lat), Math.Min(c3.Lat, c4.Lat));
+                double maxLat = Math.Max(Math.Max(c1.Lat, c2.Lat), Math.Max(c3.Lat, c4.Lat));
 
                 // Latitude ni Web Mercator chegarasiga moslaymiz.
                 minLat = Clamp(minLat, -Mercator.MaxLatitude, Mercator.MaxLatitude);
                 maxLat = Clamp(maxLat, -Mercator.MaxLatitude, Mercator.MaxLatitude);
 
-                // 2. Zoom darajasini hisoblaymiz (ekran piksellariga moslaymiz).
-                int zoom = ComputeZoom(minLon, maxLon, minLat, maxLat, view.PixelWidth);
-                zoom = Math.Max(0, Math.Min(zoom, ConfigManager.Instance.Settings.MaxZoom));
+                // 2. Zoom darajasini hisoblaymiz (ekran piksellariga moslaymiz) + GISTEREZIS.
+                //    Panda zoom X.5 chegarasida "tebranib" (flip-flop) butun mozaykani qayta
+                //    chizmasligi uchun, oldingi zoomga yaqin bo'lsa o'sha saqlanadi.
+                double rawZoom = ComputeRawZoom(minLon, maxLon, view.PixelWidth);
+                int maxZoom = ConfigManager.Instance.Settings.MaxZoom;
+                int zoom;
+                int last = _lastZoom;
+                if (last >= 0 && Math.Abs(rawZoom - last) < 0.6)
+                    zoom = last;
+                else
+                    zoom = (int)Math.Round(rawZoom);
+                zoom = Math.Max(0, Math.Min(zoom, maxZoom));
+                _lastZoom = zoom;
 
                 // 3. Kerakli tilelar ro'yxatini tuzamiz.
                 List<TileInfo> tiles = TileSystem.GetTilesForBounds(minLon, minLat, maxLon, maxLat, zoom).ToList();
@@ -326,20 +343,19 @@ namespace GoogleSatelliteCAD.Core
         // ============================ Yordamchi metodlar ============================
 
         /// <summary>
-        /// Berilgan geografik chegaralar va ekran kengligi (piksel) asosida
-        /// Web Mercator zoom darajasini hisoblaydi.
+        /// Berilgan longitude chegaralari va ekran kengligi (piksel) asosida
+        /// Web Mercator zoom darajasini (kasrli, yaxlitlanmagan) hisoblaydi.
+        /// Faqat longitude span'ga bog'liq — bu barcha CRS'larda barqaror natija beradi.
         /// </summary>
-        private int ComputeZoom(double minLon, double maxLon, double minLat, double maxLat, int pixelWidth)
+        private double ComputeRawZoom(double minLon, double maxLon, int pixelWidth)
         {
             if (pixelWidth <= 0) pixelWidth = 1024;
 
-            // Ko'rinishning markaziy kenglik (latitude) bo'yicha Web Mercator metr/piksel.
-            double centerLat = (minLat + maxLat) / 2.0;
+            double lonSpan = Math.Abs(maxLon - minLon);
+            if (lonSpan < 1e-9) return ConfigManager.Instance.Settings.MaxZoom;
 
             // Ko'rinish kengligini Web Mercator metrlarida hisoblaymiz.
-            double west = Mercator.LonToMeters(minLon);
-            double east = Mercator.LonToMeters(maxLon);
-            double viewWidthMeters = Math.Abs(east - west);
+            double viewWidthMeters = Math.Abs(Mercator.LonToMeters(maxLon) - Mercator.LonToMeters(minLon));
             if (viewWidthMeters <= 0) return ConfigManager.Instance.Settings.MaxZoom;
 
             double metersPerPixelView = viewWidthMeters / pixelWidth;
@@ -347,8 +363,7 @@ namespace GoogleSatelliteCAD.Core
             // Web Mercator: zoom=0 da bir piksel ekvatorda ~156543.034 metr.
             const double initialResolution = 2.0 * Math.PI * Mercator.EarthRadius / TileSystem.TileSize;
 
-            double zoom = Math.Log(initialResolution / metersPerPixelView, 2.0);
-            return (int)Math.Round(zoom);
+            return Math.Log(initialResolution / metersPerPixelView, 2.0);
         }
 
         /// <summary>WGS84 -> drawing natijasini AutoCAD Point3d ga o'giradi.</summary>
