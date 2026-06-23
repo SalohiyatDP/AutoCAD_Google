@@ -49,7 +49,9 @@ namespace GoogleSatelliteCAD.UI
                 var panel = new RibbonPanel { Source = source };
                 _tab.Panels.Add(panel);
 
-                source.Items.Add(CreateButton("Satellite\nON", "Google Satellite fon xaritasini yoqish (GSATON)",
+                source.Items.Add(CreateButton("Satellite ON\n(REFRESH)",
+                    "Google Satellite fon xaritasini yoqish. Allaqachon yoqilgan bo'lsa, " +
+                    "ko'rinib turgan hududni qayta yuklaydi/yangilaydi (GSATON)",
                     new RelayCommand(() => SendCommand("GSATON "))));
                 source.Items.Add(CreateButton("Go to\nKosonsoy", "Ko'rinishni Namangan viloyati, Kosonsoy tumaniga olib borish (GSATHOME)",
                     new RelayCommand(() => SendCommand("GSATHOME "))));

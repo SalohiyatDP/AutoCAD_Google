@@ -22,6 +22,23 @@ namespace GoogleSatelliteCAD.Commands
         }
 
         /// <summary>
+        /// GSATREFRESH buyrug'i — ko'rinib turgan hududni qayta yuklaydi (yangilaydi).
+        /// Xarita o'chiq bo'lsa, avval yoqadi.
+        /// </summary>
+        [CommandMethod("GSATREFRESH", CommandFlags.Modal)]
+        public void Refresh()
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            if (doc == null) return;
+
+            doc.Editor.WriteMessage("\nXarita yangilanmoqda...");
+            if (PluginContext.Instance.IsActive)
+                PluginContext.Instance.RequestRefresh();
+            else
+                PluginContext.Instance.Enable();
+        }
+
+        /// <summary>
         /// GSATHOME buyrug'i — ko'rinishni Namangan viloyati, Kosonsoy tumaniga olib boradi
         /// va xaritani yoqadi. Chizma bo'sh yoki ko'rinish hududdan tashqarida bo'lganda
         /// xaritani tez ko'rsatish uchun qulay.
