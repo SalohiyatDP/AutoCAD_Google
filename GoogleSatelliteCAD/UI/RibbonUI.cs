@@ -51,6 +51,8 @@ namespace GoogleSatelliteCAD.UI
 
                 source.Items.Add(CreateButton("Satellite\nON", "Google Satellite fon xaritasini yoqish (GSATON)",
                     new RelayCommand(() => SendCommand("GSATON "))));
+                source.Items.Add(CreateButton("Go to\nUzbekistan", "Ko'rinishni O'zbekiston hududiga (Toshkent) olib borish (GSATHOME)",
+                    new RelayCommand(() => SendCommand("GSATHOME "))));
                 source.Items.Add(CreateButton("Satellite\nOFF", "Fon xaritasini o'chirish (GSATOFF)",
                     new RelayCommand(() => SendCommand("GSATOFF "))));
                 source.Items.Add(new RibbonSeparator());

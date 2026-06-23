@@ -20,5 +20,20 @@ namespace GoogleSatelliteCAD.Commands
             doc.Editor.WriteMessage("\nGoogle Satellite yoqilmoqda...");
             PluginContext.Instance.Enable();
         }
+
+        /// <summary>
+        /// GSATHOME buyrug'i — ko'rinishni O'zbekiston hududiga (Toshkent) olib boradi
+        /// va xaritani yoqadi. Chizma bo'sh yoki ko'rinish hududdan tashqarida bo'lganda
+        /// xaritani tez ko'rsatish uchun qulay.
+        /// </summary>
+        [CommandMethod("GSATHOME", CommandFlags.Modal)]
+        public void GoHome()
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            if (doc == null) return;
+
+            doc.Editor.WriteMessage("\nO'zbekiston hududiga (Toshkent) o'tilmoqda...");
+            PluginContext.Instance.GoHome();
+        }
     }
 }

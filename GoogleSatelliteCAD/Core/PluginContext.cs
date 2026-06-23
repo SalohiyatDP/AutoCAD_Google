@@ -71,6 +71,51 @@ namespace GoogleSatelliteCAD.Core
             Logger.Info("Koordinata tizimi yangilandi: " + ConfigManager.Instance.Settings.CoordinateSystem);
         }
 
+        /// <summary>
+        /// Ko'rinishni O'zbekiston hududidagi standart nuqtaga (Toshkent) olib boradi
+        /// va fon xaritani yoqadi. Bo'sh chizmada "xarita ko'rinmayapti" holatini hal qiladi.
+        /// Asosiy (UI) oqimda, buyruq kontekstida chaqirilishi kerak.
+        /// </summary>
+        public void GoHome()
+        {
+            Document doc = Application.DocumentManager.MdiActiveDocument;
+            if (doc == null) return;
+
+            if (!IsActive) Enable();
+
+            // Standart nuqta (Toshkent) va ~20 km ko'rinish kengligini joriy CRS ga o'tkazamiz.
+            const double groundWidthMeters = 20000.0;
+            double dLon = groundWidthMeters / 2.0 / (111320.0 * Math.Cos(HomeLat * Math.PI / 180.0));
+
+            DrawingPoint center = Transform.GeographicToDrawing(HomeLon, HomeLat);
+            DrawingPoint east = Transform.GeographicToDrawing(HomeLon + dLon, HomeLat);
+            DrawingPoint north = Transform.GeographicToDrawing(HomeLon, HomeLat + dLon);
+
+            double halfW = Math.Abs(east.X - center.X);
+            double halfH = Math.Abs(north.Y - center.Y);
+            double width = Math.Max(halfW, halfH) * 2.0;
+            if (!(width > 0) || double.IsNaN(width) || double.IsInfinity(width)) width = groundWidthMeters;
+
+            try
+            {
+                Editor ed = doc.Editor;
+                using (ViewTableRecord vtr = ed.GetCurrentView())
+                {
+                    vtr.CenterPoint = new Point2d(center.X, center.Y);
+                    vtr.Width = width;
+                    vtr.Height = width;
+                    ed.SetCurrentView(vtr);
+                }
+                Logger.Info($"Uyga (Toshkent) o'tildi: markaz drawing=({center.X:F1},{center.Y:F1}).");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Uyga o'tishda xatolik.", ex);
+            }
+
+            RequestRefresh();
+        }
+
         // ============================ Yoqish / O'chirish ============================
 
         /// <summary>
@@ -423,6 +468,10 @@ namespace GoogleSatelliteCAD.Core
         private const double UzEastLon = 73.25;
         private const double UzSouthLat = 37.1;
         private const double UzNorthLat = 45.65;
+
+        // "Uyga" (GSATHOME) buyrug'i uchun standart nuqta — Toshkent markazi.
+        private const double HomeLon = 69.2797;
+        private const double HomeLat = 41.3111;
 
         /// <summary>.NET Framework 4.8 da double.IsFinite mavjud emas — o'zimiz tekshiramiz.</summary>
         private static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
