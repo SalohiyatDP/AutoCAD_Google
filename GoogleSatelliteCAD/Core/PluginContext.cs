@@ -185,10 +185,29 @@ namespace GoogleSatelliteCAD.Core
                 GeoPoint ll = Transform.DrawingToGeographic(view.MinX, view.MinY);
                 GeoPoint ur = Transform.DrawingToGeographic(view.MaxX, view.MaxY);
 
+                // MUHIM: chizma tanlangan koordinata tizimida geografik joylashtirilmagan
+                // bo'lsa, natija haqiqiy emas (NaN yoki diapazondan tashqari) bo'lishi mumkin.
+                // Bunday qiymatlarni AutoCAD raster mexanizmiga uzatish dasturni
+                // qulatadi (Access Violation). Shu sababli oldindan tekshiramiz.
+                if (!IsValidGeo(ll) || !IsValidGeo(ur))
+                {
+                    Logger.Warn(
+                        "Joriy ko'rinish tanlangan koordinata tizimida (" + Transform.Name +
+                        ") haqiqiy geografik hududga to'g'ri kelmadi. " +
+                        "Chizma shu CRS da joylashtirilmagan bo'lishi mumkin. " +
+                        "Ribbon -> Coordinate System orqali mos tizimni tanlang " +
+                        "(masalan, EPSG:3857 yoki WGS84 Geographic).");
+                    return;
+                }
+
                 double minLon = Math.Min(ll.Lon, ur.Lon);
                 double maxLon = Math.Max(ll.Lon, ur.Lon);
                 double minLat = Math.Min(ll.Lat, ur.Lat);
                 double maxLat = Math.Max(ll.Lat, ur.Lat);
+
+                // Latitude ni Web Mercator chegarasiga moslaymiz.
+                minLat = Clamp(minLat, -Mercator.MaxLatitude, Mercator.MaxLatitude);
+                maxLat = Clamp(maxLat, -Mercator.MaxLatitude, Mercator.MaxLatitude);
 
                 // 2. Zoom darajasini hisoblaymiz (ekran piksellariga moslaymiz).
                 int zoom = ComputeZoom(minLon, maxLon, minLat, maxLat, view.PixelWidth);
@@ -197,6 +216,15 @@ namespace GoogleSatelliteCAD.Core
                 // 3. Kerakli tilelar ro'yxatini tuzamiz.
                 List<TileInfo> tiles = TileSystem.GetTilesForBounds(minLon, minLat, maxLon, maxLat, zoom).ToList();
                 if (tiles.Count == 0) return;
+
+                // Xavfsizlik chegarasi: juda ko'p tile bo'lsa (koordinata mosligi buzilgan
+                // yoki haddan tashqari kichik zoom), yangilashni o'tkazib yuboramiz.
+                if (tiles.Count > MaxTilesPerRefresh)
+                {
+                    Logger.Warn($"Juda ko'p tile talab qilindi ({tiles.Count} > {MaxTilesPerRefresh}). " +
+                                "Yangilash o'tkazib yuborildi. Ko'rinishni kattalashtiring (zoom in).");
+                    return;
+                }
 
                 Logger.Info($"Ko'rinish yangilanmoqda: zoom={zoom}, tile soni={tiles.Count}.");
 
@@ -215,18 +243,36 @@ namespace GoogleSatelliteCAD.Core
                     TileBounds b = TileSystem.GetTileGeoBounds(dt.Tile);
 
                     // Tile burchaklarini drawing CRS ga qaytaramiz (affin joylashtirish uchun).
-                    Point3d origin = ToPoint(Transform.GeographicToDrawing(b.WestLon, b.SouthLat)); // pastki-chap
-                    Point3d lowerRight = ToPoint(Transform.GeographicToDrawing(b.EastLon, b.SouthLat));
-                    Point3d upperLeft = ToPoint(Transform.GeographicToDrawing(b.WestLon, b.NorthLat));
+                    DrawingPoint dOrigin = Transform.GeographicToDrawing(b.WestLon, b.SouthLat);     // pastki-chap
+                    DrawingPoint dLowerRight = Transform.GeographicToDrawing(b.EastLon, b.SouthLat);
+                    DrawingPoint dUpperLeft = Transform.GeographicToDrawing(b.WestLon, b.NorthLat);
+
+                    // Hisoblangan koordinatalar haqiqiy (chekli) ekanini tekshiramiz.
+                    if (!IsValidPoint(dOrigin) || !IsValidPoint(dLowerRight) || !IsValidPoint(dUpperLeft))
+                        continue;
+
+                    Point3d origin = ToPoint(dOrigin);
+                    Vector3d uVec = ToPoint(dLowerRight) - origin; // gorizontal (rasm kengligi)
+                    Vector3d vVec = ToPoint(dUpperLeft) - origin;  // vertikal (rasm balandligi)
+
+                    // Vektorlar nol bo'lmasligi va aql bovar qiladigan kattalikda bo'lishi kerak.
+                    if (!IsValidVector(uVec) || !IsValidVector(vVec))
+                        continue;
 
                     placements.Add(new TilePlacement
                     {
                         Tile = dt.Tile,
                         FilePath = dt.FilePath,
                         Origin = origin,
-                        UVector = lowerRight - origin, // gorizontal (rasm kengligi)
-                        VVector = upperLeft - origin    // vertikal (rasm balandligi)
+                        UVector = uVec,
+                        VVector = vVec
                     });
+                }
+
+                if (placements.Count == 0)
+                {
+                    Logger.Warn("Joylashtirish uchun haqiqiy tile topilmadi (geometriya yaroqsiz).");
+                    return;
                 }
 
                 if (token.IsCancellationRequested) return;
@@ -282,6 +328,40 @@ namespace GoogleSatelliteCAD.Core
 
         /// <summary>WGS84 -> drawing natijasini AutoCAD Point3d ga o'giradi.</summary>
         private static Point3d ToPoint(DrawingPoint p) => new Point3d(p.X, p.Y, 0.0);
+
+        // ---- Haqiqiylik (validatsiya) yordamchilari ----
+
+        /// <summary>Bir yangilashda joylashtiriladigan maksimal tile soni (xavfsizlik chegarasi).</summary>
+        private const int MaxTilesPerRefresh = 800;
+
+        /// <summary>.NET Framework 4.8 da double.IsFinite mavjud emas — o'zimiz tekshiramiz.</summary>
+        private static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
+
+        /// <summary>Geografik nuqta haqiqiy va diapazonda (lon ±180, lat ±90) ekanini tekshiradi.</summary>
+        private static bool IsValidGeo(GeoPoint g)
+        {
+            return IsFinite(g.Lon) && IsFinite(g.Lat)
+                   && g.Lon >= -180.0 && g.Lon <= 180.0
+                   && g.Lat >= -90.0 && g.Lat <= 90.0;
+        }
+
+        /// <summary>Chizma nuqtasi chekli va aql bovar qiladigan kattalikda ekanini tekshiradi.</summary>
+        private static bool IsValidPoint(DrawingPoint p)
+        {
+            const double limit = 1e12; // o'ta katta koordinatalar raster mexanizmini qulatadi
+            return IsFinite(p.X) && IsFinite(p.Y)
+                   && Math.Abs(p.X) < limit && Math.Abs(p.Y) < limit;
+        }
+
+        /// <summary>Joylashtirish vektori nol bo'lmagan, chekli va o'ta katta emasligini tekshiradi.</summary>
+        private static bool IsValidVector(Vector3d v)
+        {
+            if (!IsFinite(v.X) || !IsFinite(v.Y) || !IsFinite(v.Z)) return false;
+            double len = v.Length;
+            return len > 1e-6 && len < 1e10;
+        }
+
+        private static double Clamp(double v, double min, double max) => v < min ? min : (v > max ? max : v);
 
         /// <summary>
         /// Joriy model-space ko'rinishini o'qib, drawing koordinatalaridagi

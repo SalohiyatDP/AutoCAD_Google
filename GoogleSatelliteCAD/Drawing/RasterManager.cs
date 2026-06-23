@@ -159,6 +159,17 @@ namespace GoogleSatelliteCAD.Drawing
             {
                 var dict = (DBDictionary)tr.GetObject(dictId, OpenMode.ForWrite);
 
+                // Joylashtirish geometriyasini oxirgi marta tekshiramiz (himoya qatlami).
+                // Yaroqsiz (nol/cheksiz) vektorlar AutoCAD raster mexanizmini qulatadi.
+                Vector3d u = p.UVector;
+                Vector3d v = p.VVector;
+                if (!IsFinite(p.Origin) || !IsFinite(u) || !IsFinite(v)
+                    || u.Length < 1e-6 || v.Length < 1e-6)
+                {
+                    Logger.Warn($"Tile geometriyasi yaroqsiz, o'tkazib yuborildi: {p.Key}");
+                    return null;
+                }
+
                 // Rasm ta'rifi (RasterImageDef) — fayl manbasi.
                 var rid = new RasterImageDef { SourceFileName = p.FilePath };
                 rid.Load();
@@ -260,5 +271,13 @@ namespace GoogleSatelliteCAD.Drawing
             public ObjectId RasterId;
             public ObjectId DefId;
         }
+
+        // ---- Validatsiya yordamchilari (native qulashning oldini olish uchun) ----
+
+        private static bool IsFinite(double d) => !double.IsNaN(d) && !double.IsInfinity(d);
+
+        private static bool IsFinite(Point3d p) => IsFinite(p.X) && IsFinite(p.Y) && IsFinite(p.Z);
+
+        private static bool IsFinite(Vector3d v) => IsFinite(v.X) && IsFinite(v.Y) && IsFinite(v.Z);
     }
 }
