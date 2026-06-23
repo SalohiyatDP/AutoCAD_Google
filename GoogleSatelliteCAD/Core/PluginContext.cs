@@ -236,11 +236,18 @@ namespace GoogleSatelliteCAD.Core
                     return;
                 }
 
-                Logger.Info($"Ko'rinish yangilanmoqda: zoom={zoom}, tile soni={tiles.Count}.");
+                double centerLatLog = (minLat + maxLat) / 2.0;
+                double centerLonLog = (minLon + maxLon) / 2.0;
+                Logger.Info($"Yangilash: CRS={Transform.Name}; markaz lon={centerLonLog:F5}, lat={centerLatLog:F5}; " +
+                            $"zoom={zoom}; tile soni={tiles.Count}.");
 
                 // 4. Tilelarni yuklaymiz (asinxron, parallel) — bekor qilinishi mumkin.
                 IReadOnlyList<DownloadedTile> downloaded =
                     await TileManager.EnsureTilesAsync(tiles, token).ConfigureAwait(false);
+
+                int okCount = 0;
+                foreach (var d in downloaded) if (d.FilePath != null) okCount++;
+                Logger.Info($"Tilelar yuklandi/keshdan olindi: {okCount}/{tiles.Count}.");
 
                 if (token.IsCancellationRequested) return;
 
@@ -284,6 +291,8 @@ namespace GoogleSatelliteCAD.Core
                     Logger.Warn("Joylashtirish uchun haqiqiy tile topilmadi (geometriya yaroqsiz).");
                     return;
                 }
+
+                Logger.Info($"Joylashtirishga tayyor tile: {placements.Count}. Asosiy oqimda (Idle) qo'llanadi.");
 
                 if (token.IsCancellationRequested) return;
 
@@ -426,6 +435,7 @@ namespace GoogleSatelliteCAD.Core
             try
             {
                 RasterManager.SyncTiles(placements);
+                Logger.Info($"Rasterlar chizmaga qo'llandi: {placements.Count} ta.");
             }
             catch (Exception ex)
             {

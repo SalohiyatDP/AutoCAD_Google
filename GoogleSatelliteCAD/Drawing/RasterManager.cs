@@ -104,6 +104,7 @@ namespace GoogleSatelliteCAD.Drawing
                     _layerManager.SetLocked(db, tr, true);
 
                     tr.Commit();
+                    Logger.Info($"SyncTiles: qo'shildi={newlyAdded.Count}, o'chirildi={toRemove.Count}, jami faol={_placed.Count}.");
                 }
                 catch (Exception ex)
                 {
