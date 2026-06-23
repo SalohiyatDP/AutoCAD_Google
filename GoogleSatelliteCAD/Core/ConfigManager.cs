@@ -30,9 +30,9 @@ namespace GoogleSatelliteCAD.Core
         /// <summary>Pan/Zoom bo'lganda xarita avtomatik yangilanadimi.</summary>
         public bool AutoRefresh { get; set; } = true;
 
-        /// <summary>Chizma (DWG) ishlatadigan koordinata tizimi.</summary>
+        /// <summary>Chizma (DWG) ishlatadigan koordinata tizimi (odatiy: Pulkovo GK Zona 12N).</summary>
         public CoordinateSystemType CoordinateSystem { get; set; } =
-            CoordinateSystemType.WebMercator_3857;
+            CoordinateSystemType.Pulkovo1942_GK_Zone12N;
 
         /// <summary>Parallel ravishda yuklanadigan tilelar soni (yuklab olish oqimlari).</summary>
         public int MaxParallelDownloads { get; set; } = 8;
@@ -87,11 +87,11 @@ namespace GoogleSatelliteCAD.Core
                     {
                         var loaded = (PluginSettings)_serializer.Deserialize(fs);
                         // Qo'llab-quvvatlanadigan tizimlar: Web Mercator (EPSG:3857) va
-                        // Pulkovo 1942 GK Zona 12N. Boshqasi saqlangan bo'lsa, Web Mercator'ga moslaymiz.
+                        // Pulkovo 1942 GK Zona 12N. Boshqasi saqlangan bo'lsa, Pulkovo'ga moslaymiz.
                         if (loaded.CoordinateSystem != CoordinateSystemType.WebMercator_3857
                             && loaded.CoordinateSystem != CoordinateSystemType.Pulkovo1942_GK_Zone12N)
                         {
-                            loaded.CoordinateSystem = CoordinateSystemType.WebMercator_3857;
+                            loaded.CoordinateSystem = CoordinateSystemType.Pulkovo1942_GK_Zone12N;
                         }
                         Settings = loaded;
                         return loaded;
