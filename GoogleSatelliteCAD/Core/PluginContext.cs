@@ -276,6 +276,14 @@ namespace GoogleSatelliteCAD.Core
                     if (!IsValidVector(uVec) || !IsValidVector(vVec))
                         continue;
 
+                    // Buzilish (shear/aspect) filtri: RasterImage faqat affin (parallelogramm)
+                    // joylashtirishni qo'llab-quvvatlaydi. Gauss-Kruger (Pulkovo) o'z zonasidan
+                    // uzoqda tilelarni qattiq qiyshaytiradi — bunday tilelar chizilsa "chalkashlik"
+                    // hosil bo'ladi. Shu sababli juda cho'zilgan yoki qiyshaygan tilelarni
+                    // o'tkazib yuboramiz. (Web Mercator'da barcha tilelar ideal kvadrat — o'tadi.)
+                    if (!IsAffineFriendly(uVec, vVec))
+                        continue;
+
                     placements.Add(new TilePlacement
                     {
                         Tile = dt.Tile,
@@ -376,6 +384,29 @@ namespace GoogleSatelliteCAD.Core
             if (!IsFinite(v.X) || !IsFinite(v.Y) || !IsFinite(v.Z)) return false;
             double len = v.Length;
             return len > 1e-6 && len < 1e10;
+        }
+
+        /// <summary>
+        /// Tile affin (parallelogramm) joylashtirishga yaroqlimi — ya'ni kam qiyshaygan
+        /// va cho'zilmaganligini tekshiradi. Bu Gauss-Kruger zonasidan uzoqdagi qattiq
+        /// buzilgan tilelarni filtrlaydi (Web Mercator'da har doim true).
+        /// </summary>
+        private static bool IsAffineFriendly(Vector3d u, Vector3d v)
+        {
+            double uLen = u.Length;
+            double vLen = v.Length;
+            if (uLen < 1e-9 || vLen < 1e-9) return false;
+
+            // 1) Tomonlar nisbati ~1 ga yaqin bo'lsin (cho'zilmagan).
+            double ratio = uLen / vLen;
+            if (ratio < 0.5 || ratio > 2.0) return false;
+
+            // 2) U va V vektorlari deyarli perpendikulyar bo'lsin (kam qiyshaygan).
+            //    cos(burchak) = (u·v)/(|u||v|); perpendikulyar uchun ~0.
+            double cos = Math.Abs(u.DotProduct(v) / (uLen * vLen));
+            if (cos > 0.34) return false; // 90° ± ~20° doirasida
+
+            return true;
         }
 
         private static double Clamp(double v, double min, double max) => v < min ? min : (v > max ? max : v);
