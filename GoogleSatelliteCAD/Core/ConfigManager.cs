@@ -86,10 +86,12 @@ namespace GoogleSatelliteCAD.Core
                     using (var fs = File.OpenRead(_settingsFile))
                     {
                         var loaded = (PluginSettings)_serializer.Deserialize(fs);
-                        // Qo'llab-quvvatlanadigan tizimlar: Web Mercator (EPSG:3857) va
-                        // Pulkovo 1942 GK Zona 12N. Boshqasi saqlangan bo'lsa, Pulkovo'ga moslaymiz.
+                        // Qo'llab-quvvatlanadigan tizimlar: Web Mercator (EPSG:3857),
+                        // Pulkovo GK Zona 12N (EPSG:28412) va Pulkovo GK Zona 12N (EPSG:28462).
+                        // Boshqasi saqlangan bo'lsa, Pulkovo (28412) ga moslaymiz.
                         if (loaded.CoordinateSystem != CoordinateSystemType.WebMercator_3857
-                            && loaded.CoordinateSystem != CoordinateSystemType.Pulkovo1942_GK_Zone12N)
+                            && loaded.CoordinateSystem != CoordinateSystemType.Pulkovo1942_GK_Zone12N
+                            && loaded.CoordinateSystem != CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462)
                         {
                             loaded.CoordinateSystem = CoordinateSystemType.Pulkovo1942_GK_Zone12N;
                         }

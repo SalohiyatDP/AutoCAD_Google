@@ -217,19 +217,27 @@ namespace GoogleSatelliteCAD.Projection
         private readonly TransverseMercator _tm;
         private readonly DatumShift _datum;
         private readonly int _zone;
+        private readonly bool _zoned;
 
         /// <param name="zone">Gauss-Kruger zonasi (masalan, 12).</param>
-        public Pulkovo1942Projection(int zone)
+        /// <param name="zonedEasting">
+        /// true (standart) — zona prefiksli soxta sharqiy (false easting = zona·1e6 + 500000,
+        ///   masalan 12 500 000; EPSG:284xx). Tipik easting ~12,5xx,xxx.
+        /// false — prefikssiz (false easting = 500 000; EPSG:286xx, masalan 28462).
+        ///   Tipik easting ~5xx,xxx. Ko'pincha GPS/geodezik qurilma eksportlarida.
+        /// </param>
+        public Pulkovo1942Projection(int zone, bool zonedEasting = true)
         {
             _zone = zone;
+            _zoned = zonedEasting;
             double centralMeridian = 6.0 * zone - 3.0;        // zona markaziy meridiani
-            double falseEasting = zone * 1_000_000.0 + 500_000.0; // zona prefiksli soxta sharqiy
+            double falseEasting = zonedEasting ? (zone * 1_000_000.0 + 500_000.0) : 500_000.0;
             _tm = new TransverseMercator(Ellipsoid.Krassovsky1940,
                                          centralMeridian, 0.0, 1.0, falseEasting, 0.0);
             _datum = DatumShift.Pulkovo1942ToWgs84;
         }
 
-        public string Name => $"Pulkovo 1942 / Gauss-Kruger zona {_zone}N (EPSG:{28400 + _zone})";
+        public string Name => $"Pulkovo 1942 / GK zona {_zone}N (EPSG:{(_zoned ? 28400 : 28460) + _zone})";
 
         public GeoPoint ToGeographic(double x, double y)
         {

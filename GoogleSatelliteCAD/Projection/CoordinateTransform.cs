@@ -38,6 +38,10 @@ namespace GoogleSatelliteCAD.Projection
                 case CoordinateSystemType.WebMercator_3857:
                     return new CoordinateTransform(new WebMercatorProjection());
 
+                case CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462:
+                    // Prefikssiz easting (false easting 500000, EPSG:28462).
+                    return new CoordinateTransform(new Pulkovo1942Projection(12, zonedEasting: false));
+
                 case CoordinateSystemType.Pulkovo1942_GK_Zone12N:
                 default:
                     return new CoordinateTransform(new Pulkovo1942Projection(12));

@@ -68,7 +68,9 @@ namespace GoogleSatelliteCAD.UI
             AddCrsItem(CoordinateSystemType.WebMercator_3857,
                 "WGS 1984 Web Mercator (EPSG:3857)", s.CoordinateSystem);
             AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone12N,
-                "Pulkovo 1942 / Gauss-Kruger Zona 12N (EPSG:28412)", s.CoordinateSystem);
+                "Pulkovo 1942 / Gauss-Kruger Zona 12N (EPSG:28412, easting ~12,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462,
+                "Pulkovo 1942 / Gauss-Kruger Zona 12N (EPSG:28462, easting ~5xx,xxx)", s.CoordinateSystem);
             if (_crsCombo.SelectedIndex < 0) _crsCombo.SelectedIndex = 0;
             PlaceInForm(form, _crsCombo, 1);
 

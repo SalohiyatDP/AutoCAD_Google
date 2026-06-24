@@ -17,7 +17,13 @@ namespace GoogleSatelliteCAD.Projection
         Pulkovo1942_GK_Zone12N = 2,
 
         /// <summary>EPSG:3857 Web Mercator (Google/OSM proyeksiyasi).</summary>
-        WebMercator_3857 = 3
+        WebMercator_3857 = 3,
+
+        /// <summary>
+        /// Pulkovo 1942 / Gauss-Kruger zona 12N, prefikssiz soxta sharqiy (false easting 500000;
+        /// EPSG:28462). Easting ~5xx,xxx ko'rinishida — ko'pincha GPS/geodezik qurilma eksporti.
+        /// </summary>
+        Pulkovo1942_GK_Zone12N_28462 = 4
     }
 
     /// <summary>
