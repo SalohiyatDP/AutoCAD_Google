@@ -229,7 +229,7 @@ namespace GoogleSatelliteCAD.Projection
             _datum = DatumShift.Pulkovo1942ToWgs84;
         }
 
-        public string Name => $"Pulkovo 1942 / Gauss-Kruger zona {_zone}N";
+        public string Name => $"Pulkovo 1942 / Gauss-Kruger zona {_zone}N (EPSG:{28400 + _zone})";
 
         public GeoPoint ToGeographic(double x, double y)
         {

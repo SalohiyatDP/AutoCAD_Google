@@ -62,15 +62,14 @@ namespace GoogleSatelliteCAD.UI
 
             AddLabel(form, 1, "Koordinata tizimi:");
             _crsCombo = new ComboBox { Margin = new Thickness(0, 6, 0, 6) };
-            // Foydalanuvchi ikki tizimda ishlaydi:
-            //  - Web Mercator (EPSG:3857): umumiy/keng hudud uchun.
-            //  - Pulkovo 1942 GK Zona 12N: aniq (haqiqiy yer metrlari) lokal ish uchun.
-            _crsCombo.Items.Add(CoordinateSystemType.WebMercator_3857);
-            _crsCombo.Items.Add(CoordinateSystemType.Pulkovo1942_GK_Zone12N);
-            _crsCombo.SelectedItem =
-                s.CoordinateSystem == CoordinateSystemType.Pulkovo1942_GK_Zone12N
-                    ? CoordinateSystemType.Pulkovo1942_GK_Zone12N
-                    : CoordinateSystemType.WebMercator_3857;
+            // Qo'llab-quvvatlanadigan tizimlar (EPSG kodlari bilan aniq ko'rsatiladi):
+            //  - WGS 1984 Web Mercator (EPSG:3857): umumiy/keng hudud uchun.
+            //  - Pulkovo 1942 / GK Zona 12N (EPSG:28412): aniq lokal ish uchun.
+            AddCrsItem(CoordinateSystemType.WebMercator_3857,
+                "WGS 1984 Web Mercator (EPSG:3857)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone12N,
+                "Pulkovo 1942 / Gauss-Kruger Zona 12N (EPSG:28412)", s.CoordinateSystem);
+            if (_crsCombo.SelectedIndex < 0) _crsCombo.SelectedIndex = 0;
             PlaceInForm(form, _crsCombo, 1);
 
             AddLabel(form, 2, "Kesh hajmi (MB, 0=cheksiz):");
@@ -114,6 +113,14 @@ namespace GoogleSatelliteCAD.UI
             Content = root;
         }
 
+        /// <summary>Koordinata tizimi elementini chiroyli nom (EPSG kodi bilan) qo'shadi.</summary>
+        private void AddCrsItem(CoordinateSystemType crs, string label, CoordinateSystemType current)
+        {
+            var item = new ComboBoxItem { Content = label, Tag = crs };
+            _crsCombo.Items.Add(item);
+            if (crs == current) _crsCombo.SelectedItem = item;
+        }
+
         private static void AddLabel(Grid form, int row, string text)
         {
             var tb = new TextBlock
@@ -146,7 +153,9 @@ namespace GoogleSatelliteCAD.UI
             try
             {
                 var current = ConfigManager.Instance.Settings;
-                var crs = _crsCombo.SelectedItem is CoordinateSystemType t ? t : current.CoordinateSystem;
+                var crs = current.CoordinateSystem;
+                if (_crsCombo.SelectedItem is ComboBoxItem ci && ci.Tag is CoordinateSystemType sel)
+                    crs = sel;
                 bool crsChanged = crs != current.CoordinateSystem;
 
                 var newSettings = new PluginSettings
