@@ -50,15 +50,22 @@ DLL `NETLOAD` orqali yuklanadi.
 
 ## Koordinata tizimlari
 
-| Tizim | Maqsad | O'lcham aniqligi |
+| Tizim | Maqsad | Tipik koordinata |
 |-------|--------|------------------|
-| **WGS 1984 Web Mercator (EPSG:3857)** — standart | Umumiy/keng hudud | Mercator masshtabi 1/cos(kenglik); Toshkent kengligida ~1.33× |
-| **Pulkovo 1942 / Gauss-Kruger Zona 12N** (EPSG:28412) | Aniq lokal ish | Zonaga yaqin (69°E ±3°) ~haqiqiy yer metrlari |
+| **Pulkovo 1942 / GK Zona 12N (EPSG:28412)** — standart | Aniq lokal ish | easting ~**12,5xx,xxx** |
+| **Pulkovo 1942 / GK Zona 12N (EPSG:28462)** | Qurilma/GPS eksporti | easting ~**5xx,xxx** |
+| **WGS 1984 Web Mercator (EPSG:3857)** | Umumiy/keng hudud | metr (~7,7xx,xxx) |
 
-- Web Mercator: chizma birliklari = Web Mercator metrlari (Google/ArcGIS bilan bir xil).
-- Pulkovo GK Z12: Krassovskiy 1940 ellipsoidi, markaziy meridian 69°E, zonali false easting
-  12 500 000 (tipik easting ~12,5xx,xxx, northing ~4,5xx,xxx), WGS84'ga 7-parametrli
-  (Bursa-Wolf) datum o'tkazish.
+- **Pulkovo GK Z12 (EPSG:28412)** — Krassovskiy 1940 ellipsoidi, markaziy meridian 69°E,
+  zonali false easting **12 500 000** (easting ~12,5xx,xxx, northing ~4,5xx,xxx), WGS84'ga
+  7-parametrli (Bursa-Wolf) datum o'tkazish. **Odatiy (default) tizim.**
+- **Pulkovo GK Z12 (EPSG:28462)** — xuddi shu, lekin prefikssiz false easting **500 000**
+  (easting ~5xx,xxx). Ko'pincha GPS/geodezik qurilma eksportlarida shu variant ishlatiladi.
+- **Web Mercator** — chizma birliklari = Web Mercator metrlari (Google/ArcGIS bilan bir xil).
+  Masshtab 1/cos(kenglik); Toshkent kengligida ~1.33× (o'lcham biroz kattaroq ko'rinadi).
+
+> Koordinata tizimini chizmangiz/qurilma ma'lumotiga MOS tanlang: easting ~12,5 mln bo'lsa
+> EPSG:28412, ~5xx ming bo'lsa EPSG:28462. Noto'g'ri tanlansa, xarita mos kelmaydi.
 
 > Chizma tanlangan tizimda georeferensiyalangan bo'lishi kerak. Bo'sh chizma (0,0 atrofida)
 > uchun `GSATHOME` orqali Kosonsoy hududiga o'ting.
@@ -129,6 +136,39 @@ GoogleSatelliteCAD/
 5. Bo'sh chizmada bo'lsangiz — **Go to Kosonsoy** (`GSATHOME`) bilan hududga o'ting.
 6. Zoom/Pan qiling — xarita ko'rinayotgan hududga avtomatik moslashadi.
 7. Yangilash kerak bo'lsa — **Satellite ON (REFRESH)** yoki `GSATREFRESH`.
+
+---
+
+## Boshqa kompyuterga o'rnatish va muammolarni bartaraf etish
+
+Plaginni boshqa kompyuterga ko'chirib `NETLOAD` qilganda
+`System.Reflection.Assembly.LoadFrom` xatosi chiqsa, quyidagilarni tekshiring:
+
+### 1. DLL "bloklangan" (eng ko'p uchraydigan sabab)
+Windows internetdan yuklangan yoki boshqa kompyuterdan ko'chirilgan `.dll` ni
+xavfsizlik uchun **bloklaydi** (Mark of the Web) — natijada `LoadFrom` ishlamaydi.
+
+- `GoogleSatelliteCAD.dll` → o'ng tugma → **Properties** → pastda **"Unblock"** belgisini
+  qo'ying → **Apply / OK**. Keyin `NETLOAD` qiling.
+- Yoki PowerShell orqali butun papkani blokdan chiqaring:
+  ```powershell
+  Get-ChildItem "C:\plugin_papka" -Recurse | Unblock-File
+  ```
+
+### 2. AutoCAD versiyasi
+Plagin **AutoCAD 2021** (.NET API v24.0) uchun yig'ilgan. Boshqa kompyuterda ham
+**AutoCAD 2021** bo'lsa ishlaydi. **2022+** bo'lsa, o'sha versiya assembly'lari bilan
+qaytadan yig'ish kerak (`.csproj` dagi `AutoCADReferencePath` ni o'sha versiyaga yo'naltiring).
+
+### 3. Boshqa shartlar
+- **.NET Framework 4.8** o'rnatilgan bo'lsin (Windows 10/11 da odatda mavjud).
+- AutoCAD **64-bitli** bo'lsin (plagin x64).
+- DLL bilan birga `bin\x64\Release\` ichidagi kerakli fayllar ko'chirilsin (AutoCAD
+  assembly'lari ko'chirilmaydi — ular AutoCAD'da bor).
+
+> Avtomatik o'rnatish uchun keyinchalik **Autoloader bundle** (`.bundle` papka +
+> `PackageContents.xml`) tayyorlash mumkin — shunda DLL har safar `NETLOAD` qilinmasdan
+> avtomatik yuklanadi.
 
 ---
 
