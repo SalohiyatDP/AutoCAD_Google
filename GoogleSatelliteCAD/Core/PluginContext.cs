@@ -367,6 +367,8 @@ namespace GoogleSatelliteCAD.Core
                 }
 
                 var placements = new List<TilePlacement>(downloaded.Count);
+                double offsetX = ConfigManager.Instance.Settings.OffsetX;
+                double offsetY = ConfigManager.Instance.Settings.OffsetY;
                 foreach (DownloadedTile dt in downloaded)
                 {
                     if (dt.FilePath == null) continue;
@@ -379,8 +381,8 @@ namespace GoogleSatelliteCAD.Core
                     double oy = ts - refMy; // (shimol)
 
                     var origin = new Point3d(
-                        p0.X + mxx * ox + mxy * oy,
-                        p0.Y + myx * ox + myy * oy,
+                        p0.X + mxx * ox + mxy * oy + offsetX,
+                        p0.Y + myx * ox + myy * oy + offsetY,
                         0.0);
 
                     double dw = te - tw; // tile kengligi (mercator metr)

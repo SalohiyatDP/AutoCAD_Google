@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  =====================================================================================
+  AutoCAD Bundle Manifest — GoogleSatelliteCAD
+  =====================================================================================
+  Bu fayl AutoCAD'ga plaginni avtomatik topib yuklashni buyuradi.
+  
+  O'RNATISH:
+    Ushbu "GoogleSatelliteCAD.bundle" papkasini quyidagi joyga ko'chiring:
+      %APPDATA%\Autodesk\ApplicationPlugins\GoogleSatelliteCAD.bundle\
+    
+    AutoCAD keyingi ishga tushganda plagin avtomatik yuklanadi.
+    NETLOAD kerak emas!
+
+  TUZILISHI:
+    GoogleSatelliteCAD.bundle\
+      PackageContents.xml        (shu fayl)
+      Contents\
+        GoogleSatelliteCAD.dll   (kompilyatsiya qilingan plagin)
+  =====================================================================================
+-->
+<ApplicationPackage
+    SchemaVersion="1.0"
+    AppVersion="1.0.0"
+    AutodeskProduct="AutoCAD"
+    Name="GoogleSatelliteCAD"
+    Description="AutoCAD uchun Google Satellite fon xarita plagini"
+    Author="SalohiyatDP"
+    ProductCode="{B1D7F4A2-6C3E-4E8A-9F2B-7A1C2D3E4F50}"
+    UpgradeCode="{B1D7F4A2-6C3E-4E8A-9F2B-7A1C2D3E4F51}"
+    LoadOnAutoCADStartup="True">
+
+  <CompanyDetails
+      Name="SalohiyatDP"
+      Email="salohiyatdp@gmail.com" />
+
+  <RuntimeRequirements
+      OS="Win64"
+      Platform="AutoCAD"
+      SeriesMin="R23.0"
+      SeriesMax="R25.0" />
+
+  <Components>
+    <ComponentEntry
+        AppName="GoogleSatelliteCAD"
+        Version="1.0.0"
+        ModuleName="Contents/GoogleSatelliteCAD.dll"
+        AppDescription="Google Satellite fon xarita plagini"
+        AppType=".Net"
+        LoadOnAutoCADStartup="True">
+      <RuntimeRequirements
+          OS="Win64"
+          Platform="AutoCAD"
+          SeriesMin="R23.0"
+          SeriesMax="R25.0" />
+    </ComponentEntry>
+  </Components>
+
+</ApplicationPackage>
