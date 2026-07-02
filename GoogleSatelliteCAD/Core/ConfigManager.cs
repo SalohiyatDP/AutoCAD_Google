@@ -40,6 +40,18 @@ namespace GoogleSatelliteCAD.Core
         /// <summary>HTTP so'rovlarda foydalaniladigan User-Agent sarlavhasi.</summary>
         public string UserAgent { get; set; } =
             "GoogleSatelliteCAD/1.0 (AutoCAD Mechanical 2021 plugin)";
+
+        /// <summary>
+        /// Google qatlam surilishi X o'qi bo'yicha (chizma birliklarida, masalan metrda).
+        /// Ijobiy qiymat — sharqqa, manfiy — g'arbga suradi.
+        /// </summary>
+        public double OffsetX { get; set; } = 0.0;
+
+        /// <summary>
+        /// Google qatlam surilishi Y o'qi bo'yicha (chizma birliklarida, masalan metrda).
+        /// Ijobiy qiymat — shimolga, manfiy — janubga suradi.
+        /// </summary>
+        public double OffsetY { get; set; } = 0.0;
     }
 
     /// <summary>
