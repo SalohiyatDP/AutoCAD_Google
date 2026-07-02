@@ -2,12 +2,10 @@
 :: =====================================================================================
 ::  GoogleSatelliteCAD — O'chirish (olib tashlash) skripti
 :: =====================================================================================
-::  Bu skript plaginni AutoCAD ApplicationPlugins papkasidan olib tashlaydi.
+::  Bu skript plaginni registry va ApplicationPlugins dan olib tashlaydi.
 ::  O'chirilgandan so'ng, AutoCAD keyingi ishga tushganda plagin yuklanmaydi.
 ::
 ::  ESLATMA: Disk keshi (%APPDATA%\GoogleSatelliteCAD\) saqlanib qoladi.
-::           Keshni ham o'chirish uchun quyidagi papkani qo'lda o'chiring:
-::           %APPDATA%\GoogleSatelliteCAD\
 :: =====================================================================================
 
 setlocal
@@ -18,19 +16,11 @@ echo   GoogleSatelliteCAD — Plaginni olib tashlash
 echo  ====================================================
 echo.
 
+set "ACAD_REG_KEY=HKEY_CURRENT_USER\Software\Autodesk\AutoCAD\R24.0\ACAD-3001:409\Applications\GoogleSatelliteCAD"
 set "BUNDLE_DIR=%APPDATA%\Autodesk\ApplicationPlugins\GoogleSatelliteCAD.bundle"
 
-if not exist "%BUNDLE_DIR%" (
-    echo  Plagin o'rnatilmagan yoki allaqachon olib tashlangan.
-    echo  Joy: %BUNDLE_DIR%
-    echo.
-    pause
-    exit /b 0
-)
-
-echo  Plagin topildi: %BUNDLE_DIR%
-echo.
-set /p CONFIRM="  O'chirishni tasdiqlaysizmi? (H/Y): "
+echo  O'chirishni tasdiqlaysizmi?
+set /p CONFIRM="  (H/Y): "
 if /i not "%CONFIRM%"=="H" (
     if /i not "%CONFIRM%"=="Y" (
         echo  Bekor qilindi.
@@ -39,25 +29,36 @@ if /i not "%CONFIRM%"=="H" (
     )
 )
 
-rmdir /s /q "%BUNDLE_DIR%" 2>nul
+echo.
 
-if not exist "%BUNDLE_DIR%" (
-    echo.
-    echo  ====================================================
-    echo   MUVAFFAQIYATLI O'CHIRILDI!
-    echo  ====================================================
-    echo.
-    echo  AutoCAD keyingi ishga tushganda plagin yuklanmaydi.
-    echo.
-    echo  Disk keshini ham o'chirish uchun:
-    echo    rmdir /s /q "%APPDATA%\GoogleSatelliteCAD"
-    echo.
+:: Registry ni tozalash
+echo  [*] Registry tozalanmoqda...
+reg delete "%ACAD_REG_KEY%" /f >nul 2>&1
+if %errorlevel%==0 (
+    echo  [OK] Registry kaliti o'chirildi.
 ) else (
-    echo.
-    echo  [XATOLIK] O'chirishda muammo yuz berdi!
-    echo  Papkani qo'lda o'chirib ko'ring: %BUNDLE_DIR%
-    echo.
+    echo  [*] Registry kaliti topilmadi (allaqachon o'chirilgan).
 )
+
+:: Bundle ni tozalash
+echo  [*] Bundle papkasi o'chirilmoqda...
+if exist "%BUNDLE_DIR%" (
+    rmdir /s /q "%BUNDLE_DIR%" 2>nul
+    echo  [OK] Bundle o'chirildi.
+) else (
+    echo  [*] Bundle topilmadi (allaqachon o'chirilgan).
+)
+
+echo.
+echo  ====================================================
+echo   MUVAFFAQIYATLI O'CHIRILDI!
+echo  ====================================================
+echo.
+echo  AutoCAD keyingi ishga tushganda plagin yuklanmaydi.
+echo.
+echo  Disk keshini ham o'chirish uchun:
+echo    rmdir /s /q "%APPDATA%\GoogleSatelliteCAD"
+echo.
 
 pause
 exit /b 0
