@@ -32,7 +32,7 @@ har doim xarita ustida turadi.
 | `GSATHOME` | Ko'rinishni Namangan vil., Kosonsoy tumaniga olib boradi va yoqadi. |
 | `GSATCLEAR` | Disk keshini (yuklangan tilelarni) tozalaydi. |
 
-DLL `NETLOAD` orqali yuklanadi.
+DLL **avtomatik yuklanadi** (Autoloader bundle orqali) yoki `NETLOAD` bilan qo'lda yuklanadi.
 
 
 ---
@@ -90,6 +90,12 @@ GoogleSatelliteCAD/
 ├── TileEngine/   TileSystem, TileCache, TileDownloader, TileManager (+ interfeyslar)
 ├── Drawing/      LayerManager, RasterManager, ViewportTracker
 └── UI/           RibbonUI, SettingsWindow, SettingsViewModel, AboutWindow
+
+GoogleSatelliteCAD.bundle/
+└── PackageContents.xml   (AutoCAD Autoloader manifest — avtomatik yuklash uchun)
+
+Install.bat               (plaginni ApplicationPlugins papkasiga o'rnatadi)
+Uninstall.bat             (plaginni olib tashlaydi)
 ```
 
 ---
@@ -127,15 +133,46 @@ GoogleSatelliteCAD/
 
 ---
 
+## O'rnatish — Avtomatik yuklash (NETLOAD kerak emas!)
+
+Plaginni bir marta o'rnatib qo'ysangiz, AutoCAD har safar ochilganda **avtomatik** yuklanadi:
+
+### Usul 1: Install.bat (tavsiya etiladi)
+1. Loyihani `Release | x64` da kompilyatsiya qiling.
+2. **`Install.bat`** ni ishga tushiring (Administrator shart emas).
+3. AutoCAD ni qayta oching — plagin tayyor!
+
+### Usul 2: Qo'lda o'rnatish
+1. Quyidagi papkani yarating:
+   ```
+   %APPDATA%\Autodesk\ApplicationPlugins\GoogleSatelliteCAD.bundle\
+   ```
+2. `GoogleSatelliteCAD.bundle\PackageContents.xml` ni shu papkaga ko'chiring.
+3. Ichida `Contents\` papka yarating va `GoogleSatelliteCAD.dll` ni joylashtiring:
+   ```
+   GoogleSatelliteCAD.bundle\
+   ├── PackageContents.xml
+   └── Contents\
+       └── GoogleSatelliteCAD.dll
+   ```
+4. AutoCAD ni qayta oching.
+
+### O'chirish
+- **`Uninstall.bat`** ni ishga tushiring — plagin olib tashlanadi.
+- Yoki `%APPDATA%\Autodesk\ApplicationPlugins\GoogleSatelliteCAD.bundle\` papkasini o'chiring.
+
+> **Eslatma:** Eski usul (`NETLOAD`) ham ishlaydi — lekin har safar qo'lda yuklash kerak bo'ladi.
+
+---
+
 ## Foydalanish
 
-1. AutoCAD Mechanical 2021 ni oching.
-2. `NETLOAD` → `GoogleSatelliteCAD.dll` ni tanlang.
-3. Ribbon **Google Maps → Coordinate System** orqali tizimni tanlang (Web Mercator yoki Pulkovo GK Z12).
-4. **Satellite ON (REFRESH)** bosing yoki `GSATON` kiriting.
-5. Bo'sh chizmada bo'lsangiz — **Go to Kosonsoy** (`GSATHOME`) bilan hududga o'ting.
-6. Zoom/Pan qiling — xarita ko'rinayotgan hududga avtomatik moslashadi.
-7. Yangilash kerak bo'lsa — **Satellite ON (REFRESH)** yoki `GSATREFRESH`.
+1. AutoCAD Mechanical 2021 ni oching (plagin avtomatik yuklanadi).
+2. Ribbon **Google Maps → Coordinate System** orqali tizimni tanlang (Web Mercator yoki Pulkovo GK Z12).
+3. **Satellite ON (REFRESH)** bosing yoki `GSATON` kiriting.
+4. Bo'sh chizmada bo'lsangiz — **Go to Kosonsoy** (`GSATHOME`) bilan hududga o'ting.
+5. Zoom/Pan qiling — xarita ko'rinayotgan hududga avtomatik moslashadi.
+6. Yangilash kerak bo'lsa — **Satellite ON (REFRESH)** yoki `GSATREFRESH`.
 
 ---
 
@@ -166,9 +203,9 @@ qaytadan yig'ish kerak (`.csproj` dagi `AutoCADReferencePath` ni o'sha versiyaga
 - DLL bilan birga `bin\x64\Release\` ichidagi kerakli fayllar ko'chirilsin (AutoCAD
   assembly'lari ko'chirilmaydi — ular AutoCAD'da bor).
 
-> Avtomatik o'rnatish uchun keyinchalik **Autoloader bundle** (`.bundle` papka +
-> `PackageContents.xml`) tayyorlash mumkin — shunda DLL har safar `NETLOAD` qilinmasdan
-> avtomatik yuklanadi.
+> Avtomatik o'rnatish uchun **Install.bat** yoki qo'lda `.bundle` papkani
+> `%APPDATA%\Autodesk\ApplicationPlugins\` ga ko'chiring — shunda DLL har safar
+> `NETLOAD` qilinmasdan avtomatik yuklanadi (yuqoridagi "Avtomatik yuklash" bo'limiga qarang).
 
 ---
 
