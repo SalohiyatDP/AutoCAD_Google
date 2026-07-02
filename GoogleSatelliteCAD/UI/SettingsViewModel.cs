@@ -20,6 +20,8 @@ namespace GoogleSatelliteCAD.UI
         private bool _autoRefresh;
         private int _maxParallelDownloads;
         private CoordinateSystemType _coordinateSystem;
+        private double _offsetX;
+        private double _offsetY;
 
         public SettingsViewModel(PluginSettings settings)
         {
@@ -66,6 +68,20 @@ namespace GoogleSatelliteCAD.UI
             set { _coordinateSystem = value; OnPropertyChanged(); }
         }
 
+        /// <summary>Google qatlam X o'qi bo'yicha surilishi (chizma birliklarida).</summary>
+        public double OffsetX
+        {
+            get => _offsetX;
+            set { _offsetX = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>Google qatlam Y o'qi bo'yicha surilishi (chizma birliklarida).</summary>
+        public double OffsetY
+        {
+            get => _offsetY;
+            set { _offsetY = value; OnPropertyChanged(); }
+        }
+
         /// <summary>Modeldagi qiymatlarni ViewModel ga yuklaydi.</summary>
         public void LoadFrom(PluginSettings s)
         {
@@ -75,6 +91,8 @@ namespace GoogleSatelliteCAD.UI
             _autoRefresh = s.AutoRefresh;
             _maxParallelDownloads = s.MaxParallelDownloads;
             _coordinateSystem = s.CoordinateSystem;
+            _offsetX = s.OffsetX;
+            _offsetY = s.OffsetY;
         }
 
         /// <summary>ViewModel qiymatlarini yangi <see cref="PluginSettings"/> ga ko'chiradi.</summary>
@@ -88,6 +106,8 @@ namespace GoogleSatelliteCAD.UI
                 AutoRefresh = AutoRefresh,
                 MaxParallelDownloads = MaxParallelDownloads,
                 CoordinateSystem = CoordinateSystem,
+                OffsetX = OffsetX,
+                OffsetY = OffsetY,
                 // UserAgent foydalanuvchi tomonidan tahrirlanmaydi — saqlab qolamiz.
                 UserAgent = ConfigManager.Instance.Settings.UserAgent
             };

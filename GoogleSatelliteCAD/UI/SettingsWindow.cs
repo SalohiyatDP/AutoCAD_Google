@@ -23,6 +23,8 @@ namespace GoogleSatelliteCAD.UI
         private readonly TextBox _zoomBox;
         private readonly TextBox _parallelBox;
         private readonly CheckBox _autoRefreshCheck;
+        private readonly TextBox _offsetXBox;
+        private readonly TextBox _offsetYBox;
 
         public SettingsWindow()
         {
@@ -30,7 +32,7 @@ namespace GoogleSatelliteCAD.UI
 
             Title = "Google Satellite — Sozlamalar";
             Width = 540;
-            Height = 430;
+            Height = 520;
             ResizeMode = ResizeMode.NoResize;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             ShowInTaskbar = false;
@@ -54,7 +56,7 @@ namespace GoogleSatelliteCAD.UI
             var form = new Grid();
             form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(190) });
             form.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            for (int i = 0; i < 6; i++)
+            for (int i = 0; i < 8; i++)
                 form.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             AddLabel(form, 0, "Tile server URL:");
@@ -92,6 +94,12 @@ namespace GoogleSatelliteCAD.UI
                 VerticalAlignment = VerticalAlignment.Center
             };
             PlaceInForm(form, _autoRefreshCheck, 5);
+
+            AddLabel(form, 6, "Qatlam surilishi X (metr):");
+            _offsetXBox = AddTextBox(form, 6, s.OffsetX.ToString("G"));
+
+            AddLabel(form, 7, "Qatlam surilishi Y (metr):");
+            _offsetYBox = AddTextBox(form, 7, s.OffsetY.ToString("G"));
 
             Grid.SetRow(form, 1);
             root.Children.Add(form);
@@ -168,6 +176,8 @@ namespace GoogleSatelliteCAD.UI
                     MaxZoom = Clamp(ParseInt(_zoomBox.Text, current.MaxZoom), TileEngine.TileSystem.MinZoom, TileEngine.TileSystem.MaxZoom),
                     MaxParallelDownloads = Math.Max(1, ParseInt(_parallelBox.Text, current.MaxParallelDownloads)),
                     AutoRefresh = _autoRefreshCheck.IsChecked == true,
+                    OffsetX = ParseDouble(_offsetXBox.Text, current.OffsetX),
+                    OffsetY = ParseDouble(_offsetYBox.Text, current.OffsetY),
                     UserAgent = current.UserAgent
                 };
 
@@ -196,6 +206,13 @@ namespace GoogleSatelliteCAD.UI
         private static int ParseInt(string text, int fallback)
         {
             return int.TryParse((text ?? "").Trim(), out int v) ? v : fallback;
+        }
+
+        private static double ParseDouble(string text, double fallback)
+        {
+            return double.TryParse((text ?? "").Trim(),
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out double v) ? v : fallback;
         }
 
         private static int Clamp(int v, int min, int max) => v < min ? min : (v > max ? max : v);
