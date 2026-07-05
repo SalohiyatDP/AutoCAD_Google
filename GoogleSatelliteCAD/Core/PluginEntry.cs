@@ -34,6 +34,13 @@ namespace GoogleSatelliteCAD.Core
                 // Ribbon mavjud bo'lsa darhol quramiz, aks holda Ribbon paydo bo'lishini kutamiz.
                 RibbonUI.Instance.TryBuild();
 
+                // Litsenziya holatini jurnalga yozamiz (yuklashni bloklamaydi; buyruqlar
+                // ishlaganda GoogleSatelliteCAD.Licensing.LicenseGate orqali tekshiriladi).
+                var lic = GoogleSatelliteCAD.Licensing.LicenseManager.CheckInstalled();
+                Logger.Info(lic.IsValid
+                    ? "Litsenziya faol. " + lic.Message
+                    : "Litsenziya faol emas: " + lic.Message + "  (Machine ID: GSATID, o'rnatish: GSATLIC)");
+
                 // Yangi hujjat faollashganda Ribbon hali tayyor bo'lmagan bo'lsa quramiz.
                 Application.DocumentManager.DocumentActivated += OnDocumentActivated;
 

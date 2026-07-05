@@ -14,6 +14,7 @@ namespace GoogleSatelliteCAD.Commands
         [CommandMethod("GSATON", CommandFlags.Modal)]
         public void Execute()
         {
+            if (!GoogleSatelliteCAD.Licensing.LicenseGate.Ensure()) return;
             Document doc = Application.DocumentManager.MdiActiveDocument;
             if (doc == null) return;
 
@@ -28,6 +29,7 @@ namespace GoogleSatelliteCAD.Commands
         [CommandMethod("GSATREFRESH", CommandFlags.Modal)]
         public void Refresh()
         {
+            if (!GoogleSatelliteCAD.Licensing.LicenseGate.Ensure()) return;
             Document doc = Application.DocumentManager.MdiActiveDocument;
             if (doc == null) return;
 
@@ -46,6 +48,7 @@ namespace GoogleSatelliteCAD.Commands
         [CommandMethod("GSATHOME", CommandFlags.Modal)]
         public void GoHome()
         {
+            if (!GoogleSatelliteCAD.Licensing.LicenseGate.Ensure()) return;
             Document doc = Application.DocumentManager.MdiActiveDocument;
             if (doc == null) return;
 
