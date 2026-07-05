@@ -21,16 +21,13 @@ namespace GoogleSatelliteCAD.Licensing
     }
 
     /// <summary>
-    /// Litsenziyani tekshiradi va o'rnatadi. Bu yerda FAQAT OCHIQ kalit bo'ladi —
-    /// litsenziyani imzolash faqat sizdagi MAXFIY kalit bilan mumkin.
-    ///
-    /// Format:  base64url(payload) + "." + base64url(signature)
-    ///   payload   = UTF8( "machineId|expiryTicksUtc" )
-    ///   signature = RSA-2048 / SHA-256 / PKCS#1 v1.5
+    /// Litsenziyani tekshiradi va o'rnatadi. Topography plagini bilan AYNAN BIR XIL usul:
+    ///   license = Base32( GZip( UTF8("ProcessorId|expiryTicks") + 256-baytli RSA imzo ) )
+    /// Bu yerda FAQAT OCHIQ kalit bo'ladi — imzolash sizdagi MAXFIY kalit bilan qilinadi.
     /// </summary>
     public static class LicenseManager
     {
-        // Bu loyiha (GoogleSatelliteCAD) uchun OCHIQ kalit.
+        // GoogleSatelliteCAD uchun OCHIQ kalit.
         private const string PublicKeyXml =
             "<RSAKeyValue><Modulus>4T3htOX/p5xS4tgbTVRXQ1JzBaquvR7wGl68TPsz628SrDXUQbbXK7PHqdPZNPZx1n7cj1hrcAtfk4nOWt2twb7ZVmH0QqIW0i5HXm7k9DN7jJDCQySSKpc6dHkmEYC+Cp1U/nevwLsX64EKt4qnawWOUOsdKREo7ffstHdbPIBEeKwQHktuYwev43xFTISaMcvk4YJYLzDg6RGXZnGmrFHFneOhBe2CXSJvGOVJUqpFCCmJqkbzWzXcpDA8mQnVRbVTSy+Kz/YBbWjke1VOb50NPbvHVwFFhhTlYWaAaPvGVe8s/o1KF0WQrRsTJGLAXPCHff9PrxH/JRH9q4khqw==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
 
@@ -69,7 +66,7 @@ namespace GoogleSatelliteCAD.Licensing
                 {
                     string dir = Path.GetDirectoryName(LicensePath);
                     if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                    File.WriteAllText(LicensePath, licenseStr.Trim());
+                    File.WriteAllText(LicensePath, (licenseStr ?? string.Empty).Trim());
                 }
                 catch (Exception ex)
                 {
@@ -86,34 +83,39 @@ namespace GoogleSatelliteCAD.Licensing
 
             try
             {
-                string[] parts = licenseStr.Trim().Split('.');
-                if (parts.Length != 2)
+                byte[] all = LicenseCodec.Decompress(LicenseCodec.Base32Decode(licenseStr.Trim()));
+                if (all.Length <= 256)
                     return new LicenseResult(false, "Litsenziya formati noto'g'ri.");
 
-                byte[] payload = FromBase64Url(parts[0]);
-                byte[] signature = FromBase64Url(parts[1]);
-
-                using (var rsa = new RSACryptoServiceProvider())
-                {
-                    rsa.FromXmlString(PublicKeyXml);
-                    if (!rsa.VerifyData(payload, CryptoConfig.MapNameToOID("SHA256"), signature))
-                        return new LicenseResult(false, "Imzo yaroqsiz — litsenziya soxta yoki o'zgartirilgan.");
-                }
+                byte[] payload = new byte[all.Length - 256];
+                byte[] signature = new byte[256];
+                Buffer.BlockCopy(all, 0, payload, 0, payload.Length);
+                Buffer.BlockCopy(all, payload.Length, signature, 0, 256);
 
                 string text = Encoding.UTF8.GetString(payload);
-                string[] fields = text.Split('|');
-                if (fields.Length != 2)
+                string[] parts = text.Split('|');
+                if (parts.Length != 2)
                     return new LicenseResult(false, "Litsenziya ma'lumoti noto'g'ri.");
 
-                if (!string.Equals(fields[0], MachineIdProvider.Get(), StringComparison.Ordinal))
+                string recomputedId = LicenseCodec.Base32Encode(
+                    LicenseCodec.Compress(Encoding.UTF8.GetBytes(parts[0])));
+                if (!string.Equals(recomputedId, MachineIdProvider.Get(), StringComparison.Ordinal))
                     return new LicenseResult(false, "Litsenziya bu kompyuter uchun emas.");
 
-                if (!long.TryParse(fields[1], out long ticks))
+                if (!long.TryParse(parts[1], out long ticks))
                     return new LicenseResult(false, "Litsenziya muddati noto'g'ri.");
 
                 var expiryUtc = new DateTime(ticks, DateTimeKind.Utc);
                 if (DateTime.UtcNow >= expiryUtc)
                     return new LicenseResult(false, "Litsenziya muddati tugagan (" + expiryUtc.ToLocalTime() + ").", expiryUtc);
+
+                using (var rsa = new RSACryptoServiceProvider())
+                {
+                    rsa.FromXmlString(PublicKeyXml);
+                    bool ok = rsa.VerifyData(Encoding.UTF8.GetBytes(text), CryptoConfig.MapNameToOID("SHA256"), signature);
+                    if (!ok)
+                        return new LicenseResult(false, "Imzo yaroqsiz — litsenziya soxta yoki o'zgartirilgan.");
+                }
 
                 return new LicenseResult(true, "Litsenziya yaroqli. Muddat: " + expiryUtc.ToLocalTime(), expiryUtc);
             }
@@ -121,17 +123,6 @@ namespace GoogleSatelliteCAD.Licensing
             {
                 return new LicenseResult(false, "Tekshirishda xato: " + ex.Message);
             }
-        }
-
-        private static byte[] FromBase64Url(string s)
-        {
-            s = s.Replace('-', '+').Replace('_', '/');
-            switch (s.Length % 4)
-            {
-                case 2: s += "=="; break;
-                case 3: s += "="; break;
-            }
-            return Convert.FromBase64String(s);
         }
     }
 }

@@ -102,6 +102,7 @@
     <Compile Include="Core\PluginEntry.cs" />
     <Compile Include="Core\ConfigManager.cs" />
 
+    <Compile Include="Licensing\LicenseCodec.cs" />
     <Compile Include="Licensing\MachineIdProvider.cs" />
     <Compile Include="Licensing\LicenseManager.cs" />
     <Compile Include="Licensing\LicenseGate.cs" />
