@@ -134,6 +134,7 @@
 
     <Compile Include="UI\RibbonUI.cs" />
     <Compile Include="UI\AboutWindow.cs" />
+    <Compile Include="UI\ActivationWindow.cs" />
     <Compile Include="UI\SettingsViewModel.cs" />
     <Compile Include="UI\SettingsWindow.cs" />
 

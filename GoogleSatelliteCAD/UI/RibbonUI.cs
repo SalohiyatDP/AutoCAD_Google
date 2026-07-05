@@ -64,6 +64,10 @@ namespace GoogleSatelliteCAD.UI
                     new RelayCommand(ShowSettings)));
                 source.Items.Add(CreateButton("About", "Dastur haqida",
                     new RelayCommand(ShowAbout)));
+                source.Items.Add(new RibbonSeparator());
+                source.Items.Add(CreateButton("Aktivatsiya\nqilish",
+                    "Plaginni faollashtirish: Machine ID (Product key) va faollashtirish kalitini kiritish",
+                    new RelayCommand(ShowActivation)));
 
                 Logger.Info("\"Google Maps\" Ribbon yorlig'i qo'shildi.");
             }
@@ -134,6 +138,19 @@ namespace GoogleSatelliteCAD.UI
             catch (Exception ex)
             {
                 Logger.Error("About oynasini ochishda xatolik.", ex);
+            }
+        }
+
+        private static void ShowActivation()
+        {
+            try
+            {
+                var win = new ActivationWindow();
+                Application.ShowModalWindow(win);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Aktivatsiya oynasini ochishda xatolik.", ex);
             }
         }
     }
