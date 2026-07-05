@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RSA kalit jufti yaratish (har bir plagin uchun)</title>
+<style>
+  :root{--bg:#0f172a;--panel:#1e293b;--p2:#273449;--line:#334155;--txt:#e2e8f0;--mut:#94a3b8;--acc:#38bdf8;--warn:#f59e0b}
+  *{box-sizing:border-box}body{margin:0;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt);line-height:1.55}
+  .wrap{max-width:900px;margin:0 auto;padding:24px}h1{font-size:21px;margin:0 0 4px}
+  .sub{color:var(--mut);font-size:14px;margin:0 0 16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+  label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px;font-weight:600}
+  button{background:var(--acc);color:#04212f;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:14px}
+  button.sec{background:var(--p2);color:var(--txt);border:1px solid var(--line)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .out{background:#0b1220;border:1px dashed var(--line);border-radius:8px;padding:12px;font-family:ui-monospace,monospace;font-size:12px;word-break:break-all;white-space:pre-wrap;min-height:36px}
+  .warn{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);border-radius:8px;padding:12px;font-size:13px;color:#fde68a;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>RSA kalit jufti yaratish</h1>
+  <p class="sub">Har bir YANGI plagin uchun bir marta bajariladi. RSA-2048 juft kalit yaratadi.</p>
+  <div class="card">
+    <div class="btns"><button id="genBtn">Yangi kalit jufti yaratish</button></div>
+
+    <label>① OCHIQ kalit (public) — <b>LicenseConfig.cs → PublicKeyXml</b> ga qo'ying</label>
+    <div class="out" id="pub">—</div>
+
+    <label>② MAXFIY kalit (private) — <b>faqat o'zingizda</b> saqlang; litsenziya imzolashda ishlatiladi</label>
+    <div class="out" id="priv">—</div>
+    <div class="btns">
+      <button class="sec" id="copyPub">Ochiqni nusxalash</button>
+      <button class="sec" id="copyPriv">Maxfiyni nusxalash</button>
+      <button class="sec" id="dlPriv">Maxfiyni saqlash (.xml)</button>
+    </div>
+
+    <div class="warn">⚠️ Maxfiy kalitni xavfsiz zaxira qiling. Yo'qotsangiz — yangi litsenziya imzolab bo'lmaydi; oshkor bo'lsa — himoya buziladi. Har plaginга ALOHIDA juft yarating.</div>
+  </div>
+  <p class="sub">Talab: zamonaviy brauzer (Web Crypto).</p>
+</div>
+<script>
+"use strict";
+const b64urlToB64 = u=>{u=u.replace(/-/g,"+").replace(/_/g,"/");while(u.length%4)u+="=";return u;};
+let privXml="",pubXml="";
+async function gen(){
+  const kp=await crypto.subtle.generateKey({name:"RSASSA-PKCS1-v1_5",modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:"SHA-256"},true,["sign","verify"]);
+  const j=await crypto.subtle.exportKey("jwk",kp.privateKey);
+  const s=x=>b64urlToB64(x);
+  privXml="<RSAKeyValue><Modulus>"+s(j.n)+"</Modulus><Exponent>"+s(j.e)+"</Exponent><P>"+s(j.p)+"</P><Q>"+s(j.q)+"</Q><DP>"+s(j.dp)+"</DP><DQ>"+s(j.dq)+"</DQ><InverseQ>"+s(j.qi)+"</InverseQ><D>"+s(j.d)+"</D></RSAKeyValue>";
+  pubXml="<RSAKeyValue><Modulus>"+s(j.n)+"</Modulus><Exponent>"+s(j.e)+"</Exponent></RSAKeyValue>";
+  document.getElementById("pub").textContent=pubXml;
+  document.getElementById("priv").textContent=privXml;
+}
+document.getElementById("genBtn").onclick=()=>gen().catch(e=>alert(e.message));
+document.getElementById("copyPub").onclick=()=>{if(pubXml)navigator.clipboard.writeText(pubXml);};
+document.getElementById("copyPriv").onclick=()=>{if(privXml)navigator.clipboard.writeText(privXml);};
+document.getElementById("dlPriv").onclick=()=>{if(!privXml){alert("Avval yarating.");return;}const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([privXml],{type:"text/xml"}));a.download="private-key.xml";a.click();URL.revokeObjectURL(a.href);};
+</script>
+</body>
+</html>
