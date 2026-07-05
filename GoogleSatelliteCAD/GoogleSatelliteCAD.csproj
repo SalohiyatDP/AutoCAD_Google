@@ -56,6 +56,8 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+    <!-- Litsenziya moduli uchun: Machine ID (CPU/BIOS) WMI orqali olinadi. -->
+    <Reference Include="System.Management" />
     <!-- WPF Sozlamalar oynasi uchun -->
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -99,6 +101,11 @@
   <ItemGroup>
     <Compile Include="Core\PluginEntry.cs" />
     <Compile Include="Core\ConfigManager.cs" />
+
+    <Compile Include="Licensing\MachineIdProvider.cs" />
+    <Compile Include="Licensing\LicenseManager.cs" />
+    <Compile Include="Licensing\LicenseGate.cs" />
+    <Compile Include="Licensing\LicenseCommands.cs" />
     <Compile Include="Core\PluginContext.cs" />
     <Compile Include="Core\Logger.cs" />
 
