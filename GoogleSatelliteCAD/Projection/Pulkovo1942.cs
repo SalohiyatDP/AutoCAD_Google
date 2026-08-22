@@ -369,56 +369,113 @@ namespace GoogleSatelliteCAD.Projection
     /// </summary>
     public sealed class UtmProjection : IProjection
     {
-        private TransverseMercator _tm;
-        private int _zone;
-        private bool _zoneFixed;
-        private bool _northern = true;
+        // O'zbekiston hududini qamrab oluvchi UTM zonalari diapazoni (shimoliy yarim shar).
+        private const int MinUzZone = 40; // markaziy meridian 57°E (54..60°E)
+        private const int MaxUzZone = 43; // markaziy meridian 75°E (72..78°E)
 
-        /// <param name="zone">UTM zonasi (1..60). 0 bo'lsa, birinchi
-        /// FromGeographic chaqiruvida avtomatik aniqlanadi.</param>
-        public UtmProjection(int zone = 0)
+        private readonly bool _zoned;
+        private readonly bool _auto;
+        private readonly int _zone;                 // aniq zona (auto bo'lsa 0)
+        private readonly TransverseMercator _tm;     // aniq zona uchun TM (auto bo'lsa null)
+        private readonly System.Collections.Generic.Dictionary<int, TransverseMercator> _tmCache;
+
+        // Avto-rejimda easting'dan aniqlangan oxirgi zona (ToGeographic va FromGeographic
+        // izchilligini ta'minlaydi — Pulkovo avto-zona bilan bir xil mantiq).
+        private int _autoLastZone; // 0 = hali aniqlanmagan
+
+        /// <param name="zone">
+        /// UTM zonasi (masalan, 42). 0 yoki manfiy bo'lsa — AVTO-ZONA rejimi
+        /// (zona prefiksli easting'dan avtomatik aniqlanadi, O'zbekiston uchun 40..43).
+        /// </param>
+        /// <param name="zonedEasting">
+        /// false (standart UTM) — false easting = 500 000 (easting ~5xx,xxx). Zona easting'da
+        ///   kodlanmaydi, shu sababli avto-zona ishlamaydi — aniq zonani tanlang.
+        /// true — prefiksli false easting = zona·1e6 + 500000 (masalan 42 500 000; easting
+        ///   ~42,5xx,xxx). Zona easting'da kodlangani uchun avto-zona ishlaydi.
+        /// </param>
+        public UtmProjection(int zone = 0, bool zonedEasting = false)
         {
-            if (zone >= 1 && zone <= 60)
+            if (zone <= 0)
+            {
+                // Avto-zona faqat prefiksli easting bilan aniqlanadi.
+                _auto = true;
+                _zoned = true;
+                _zone = 0;
+                _tmCache = new System.Collections.Generic.Dictionary<int, TransverseMercator>();
+            }
+            else
             {
                 _zone = zone;
-                _zoneFixed = true;
-                BuildTm();
+                _zoned = zonedEasting;
+                _tm = BuildTm(zone);
             }
         }
 
-        public string Name => _zoneFixed
-            ? $"WGS84 / UTM zona {_zone}{(_northern ? "N" : "S")} (EPSG:{(_northern ? 32600 : 32700) + _zone})"
-            : "WGS84 / UTM (avto zona)";
-
-        private void BuildTm()
+        /// <summary>Berilgan zona uchun WGS84 UTM (Transverse Mercator) proyeksiyasini quradi.</summary>
+        private TransverseMercator BuildTm(int zone)
         {
-            double centralMeridian = (_zone - 1) * 6.0 - 180.0 + 3.0;
-            double falseNorthing = _northern ? 0.0 : 10_000_000.0;
-            _tm = new TransverseMercator(Ellipsoid.WGS84, centralMeridian, 0.0,
-                                         0.9996, 500_000.0, falseNorthing);
+            double centralMeridian = (zone - 1) * 6.0 - 180.0 + 3.0;
+            double falseEasting = _zoned ? (zone * 1_000_000.0 + 500_000.0) : 500_000.0;
+            // Shimoliy yarim shar: false northing = 0. UTM masshtabi k0 = 0.9996.
+            return new TransverseMercator(Ellipsoid.WGS84, centralMeridian, 0.0,
+                                          0.9996, falseEasting, 0.0);
         }
+
+        private TransverseMercator TmForZone(int zone)
+        {
+            if (!_auto) return _tm;
+            if (!_tmCache.TryGetValue(zone, out TransverseMercator tm))
+            {
+                tm = BuildTm(zone);
+                _tmCache[zone] = tm;
+            }
+            return tm;
+        }
+
+        private static int ClampUzZone(int zone)
+            => zone < MinUzZone ? MinUzZone : (zone > MaxUzZone ? MaxUzZone : zone);
+
+        /// <summary>Prefiksli easting'dan zonani aniqlaydi (masalan 42,5xx,xxx -> 42).</summary>
+        private static int ZoneFromEasting(double easting)
+            => ClampUzZone((int)Math.Floor(easting / 1_000_000.0));
+
+        /// <summary>Longitude (gradus)'dan UTM zonasini aniqlaydi.</summary>
+        private static int ZoneFromLon(double lonDeg)
+            => ClampUzZone((int)Math.Floor((lonDeg + 180.0) / 6.0) + 1);
+
+        public string Name => _auto
+            ? $"WGS84 / UTM avto-zona {MinUzZone}N..{MaxUzZone}N (O'zbekiston, prefiksli)"
+            : $"WGS84 / UTM zona {_zone}N (EPSG:{32600 + _zone}{(_zoned ? ", prefiksli" : "")})";
 
         public GeoPoint ToGeographic(double x, double y)
         {
-            if (_tm == null)
+            // Avto-rejimda zonani prefiksli easting'dan aniqlab keshlaymiz (ishonchli manba).
+            TransverseMercator tm;
+            if (_auto)
             {
-                // Zona hali aniqlanmagan — O'zbekiston markaziga mos xavfsiz standart (UTM 42N).
-                _zone = 42;
-                BuildTm();
+                int zone = ZoneFromEasting(x);
+                _autoLastZone = zone;
+                tm = TmForZone(zone);
             }
-            _tm.Inverse(x, y, out double lon, out double lat);
+            else tm = _tm;
+
+            tm.Inverse(x, y, out double lon, out double lat);
             return new GeoPoint(lon, lat);
         }
 
         public DrawingPoint FromGeographic(double lon, double lat)
         {
-            if (!_zoneFixed && _tm == null)
+            // Avto-rejimda: ToGeographic aniqlagan zonadan foydalanamiz (izchillik), aks holda
+            // (hali aniqlanmagan bo'lsa) longitude'dan aniqlaymiz.
+            TransverseMercator tm;
+            if (_auto)
             {
-                _zone = (int)Math.Floor((lon + 180.0) / 6.0) + 1;
-                _northern = lat >= 0.0;
-                BuildTm();
+                int zone = _autoLastZone > 0 ? _autoLastZone : ZoneFromLon(lon);
+                tm = TmForZone(zone);
             }
-            _tm.Forward(lon, lat, out double e, out double n);
+            else tm = _tm;
+
+            tm.Forward(lon, lat, out double e, out double n);
             return new DrawingPoint(e, n);
         }
     }

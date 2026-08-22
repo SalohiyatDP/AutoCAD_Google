@@ -48,6 +48,22 @@ namespace GoogleSatelliteCAD.Projection
                 case CoordinateSystemType.WGS84_UTM_Zone43N:
                     return new CoordinateTransform(new UtmProjection(43));
 
+                // ---- WGS 84 / UTM PREFIKSLI easting (false easting = zona·1e6 + 500000) ----
+                case CoordinateSystemType.WGS84_UTM_ZoneAuto:
+                    return new CoordinateTransform(new UtmProjection(0)); // 0 = avto (prefiksli)
+
+                case CoordinateSystemType.WGS84_UTM_Zone40N_Zoned:
+                    return new CoordinateTransform(new UtmProjection(40, zonedEasting: true));
+
+                case CoordinateSystemType.WGS84_UTM_Zone41N_Zoned:
+                    return new CoordinateTransform(new UtmProjection(41, zonedEasting: true));
+
+                case CoordinateSystemType.WGS84_UTM_Zone42N_Zoned:
+                    return new CoordinateTransform(new UtmProjection(42, zonedEasting: true));
+
+                case CoordinateSystemType.WGS84_UTM_Zone43N_Zoned:
+                    return new CoordinateTransform(new UtmProjection(43, zonedEasting: true));
+
                 case CoordinateSystemType.WebMercator_3857:
                     return new CoordinateTransform(new WebMercatorProjection());
 

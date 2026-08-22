@@ -92,7 +92,7 @@ namespace GoogleSatelliteCAD.UI
             AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463,
                 "Pulkovo 1942 / GK Zona 13N (EPSG:28463, easting ~5xx,xxx)", s.CoordinateSystem);
 
-            // WGS 84 / UTM zonalari (O'zbekiston 40N..43N) — easting ~5xx,xxx (toposyomka).
+            // WGS 84 / UTM zonalari (O'zbekiston 40N..43N) — prefikssiz, easting ~5xx,xxx (toposyomka).
             AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone40N,
                 "WGS 84 / UTM Zona 40N (EPSG:32640, MM 57°E, easting ~5xx,xxx)", s.CoordinateSystem);
             AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone41N,
@@ -101,6 +101,18 @@ namespace GoogleSatelliteCAD.UI
                 "WGS 84 / UTM Zona 42N (EPSG:32642, MM 69°E, easting ~5xx,xxx)", s.CoordinateSystem);
             AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone43N,
                 "WGS 84 / UTM Zona 43N (EPSG:32643, MM 75°E, easting ~5xx,xxx)", s.CoordinateSystem);
+
+            // WGS 84 / UTM PREFIKSLI easting (false easting = zona·1e6 + 500000) — easting ~zona,5xx,xxx.
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_ZoneAuto,
+                "WGS 84 / UTM AVTO-ZONA — butun O'zbekiston (40N..43N, prefiksli easting)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone40N_Zoned,
+                "WGS 84 / UTM Zona 40N — prefiksli (easting ~40,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone41N_Zoned,
+                "WGS 84 / UTM Zona 41N — prefiksli (easting ~41,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone42N_Zoned,
+                "WGS 84 / UTM Zona 42N — prefiksli (easting ~42,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone43N_Zoned,
+                "WGS 84 / UTM Zona 43N — prefiksli (easting ~43,5xx,xxx)", s.CoordinateSystem);
 
             // Umumiy/keng hudud uchun.
             AddCrsItem(CoordinateSystemType.WebMercator_3857,

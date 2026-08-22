@@ -58,7 +58,8 @@ bilan qoplanadi (har zona 6° kenglikda). Plagin bu zonalarning barchasini qo'll
 | **Pulkovo 1942 / GK AVTO-ZONA (10N..13N)** — **standart** | Butun O'zbekiston, zona avtomatik | prefiksli (~z,5xx,xxx) |
 | **Pulkovo 1942 / GK Zona 10N/11N/12N/13N (EPSG:28410–28413)** | Aniq zona, prefiksli easting | ~**10..13,5xx,xxx** |
 | **Pulkovo 1942 / GK Zona 10N/11N/12N/13N (EPSG:28460–28463)** | Qurilma/GPS eksporti, prefikssiz | ~**5xx,xxx** |
-| **WGS 84 / UTM Zona 40N/41N/42N/43N (EPSG:32640–32643)** | Toposyomka, GNSS/GPS (WGS84) | ~**5xx,xxx** |
+| **WGS 84 / UTM Zona 40N/41N/42N/43N (EPSG:32640–32643)** | Toposyomka, GNSS/GPS (WGS84), prefikssiz | ~**5xx,xxx** |
+| **WGS 84 / UTM Zona 40N..43N — prefiksli / AVTO-ZONA** | UTM, zona easting'da kodlangan | ~**4z,5xx,xxx** |
 | **WGS 1984 Web Mercator (EPSG:3857)** | Umumiy/keng hudud | metr (~7,7xx,xxx) |
 
 **Gauss-Krüger zonalari va markaziy meridianlari (O'zbekiston):**
@@ -87,11 +88,16 @@ bilan qoplanadi (har zona 6° kenglikda). Plagin bu zonalarning barchasini qo'll
   = `zona·1 000 000 + 500 000` (easting ~z,5xx,xxx), WGS84'ga 7-parametrli (Bursa-Wolf) datum.
 - **Prefikssiz GK zonalari (EPSG:2846x)** — xuddi shu, lekin false easting **500 000**
   (easting ~5xx,xxx). Ko'pincha GPS/geodezik qurilma eksportlarida ishlatiladi.
-- **WGS 84 / UTM zonalari (EPSG:326xx)** — WGS84 ellipsoidi (datum o'tkazish shart emas),
-  k₀ = 0.9996, false easting **500 000** (easting ~5xx,xxx). Toposyomka va GNSS/GPS
-  eksportlari uchun qulay. Markaziy meridianlari GK zonalariga mos (57/63/69/75°E), lekin
-  ellipsoid/masshtab boshqacha. **DIQQAT:** UTM easting zonani kodlab bermaydi (barcha zonalarda
-  ~5xx,xxx), shu sababli UTM uchun **aniq zonani qo'lda tanlash kerak** (avto-zona yo'q).
+- **WGS 84 / UTM zonalari — prefikssiz (EPSG:326xx)** — WGS84 ellipsoidi (datum o'tkazish
+  shart emas), k₀ = 0.9996, false easting **500 000** (easting ~5xx,xxx). Toposyomka va
+  GNSS/GPS eksportlari uchun qulay. Markaziy meridianlari GK zonalariga mos (57/63/69/75°E),
+  lekin ellipsoid/masshtab boshqacha. Prefikssiz easting zonani kodlamaydi, shu sababli
+  **aniq zonani qo'lda tanlash kerak** (bu variantda avto-zona yo'q).
+- **WGS 84 / UTM zonalari — prefiksli / AVTO-ZONA** — xuddi shu UTM, lekin false easting =
+  `zona·1 000 000 + 500 000` (masalan zona 42 → easting ~42,5xx,xxx). Zona easting'da
+  kodlangani uchun **AVTO-ZONA ishlaydi** — butun O'zbekiston bo'ylab bitta tanlov bilan
+  (Pulkovo GK avto-zona kabi). Prefiksli UTM (~4z,5xx,xxx) va prefiksli GK (~1z,5xx,xxx)
+  easting diapazonlari ustma-ust tushmaydi.
 - **Web Mercator** — chizma birliklari = Web Mercator metrlari (Google/ArcGIS bilan bir xil).
   Masshtab 1/cos(kenglik); Toshkent kengligida ~1.33× (o'lcham biroz kattaroq ko'rinadi).
 

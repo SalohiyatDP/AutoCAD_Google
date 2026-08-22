@@ -144,6 +144,11 @@ namespace GoogleSatelliteCAD.Core
                 case CoordinateSystemType.WGS84_UTM_Zone41N:
                 case CoordinateSystemType.WGS84_UTM_Zone42N:
                 case CoordinateSystemType.WGS84_UTM_Zone43N:
+                case CoordinateSystemType.WGS84_UTM_ZoneAuto:
+                case CoordinateSystemType.WGS84_UTM_Zone40N_Zoned:
+                case CoordinateSystemType.WGS84_UTM_Zone41N_Zoned:
+                case CoordinateSystemType.WGS84_UTM_Zone42N_Zoned:
+                case CoordinateSystemType.WGS84_UTM_Zone43N_Zoned:
                     return true;
                 default:
                     return false;

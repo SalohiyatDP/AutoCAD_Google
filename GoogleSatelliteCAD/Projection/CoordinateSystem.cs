@@ -63,7 +63,25 @@ namespace GoogleSatelliteCAD.Projection
         WGS84_UTM_Zone42N = 14,
 
         /// <summary>WGS 84 / UTM zona 43N (EPSG:32643, markaziy meridian 75°E, easting ~5xx,xxx).</summary>
-        WGS84_UTM_Zone43N = 15
+        WGS84_UTM_Zone43N = 15,
+
+        /// <summary>
+        /// WGS 84 / UTM — AVTO-ZONA (O'zbekiston 40N..43N), PREFIKSLI easting.
+        /// Zona chizma easting'idagi prefiksdan aniqlanadi (masalan ~42,5xx,xxx -> zona 42).
+        /// </summary>
+        WGS84_UTM_ZoneAuto = 16,
+
+        /// <summary>WGS 84 / UTM zona 40N, PREFIKSLI easting (false easting 40 500 000; easting ~40,5xx,xxx).</summary>
+        WGS84_UTM_Zone40N_Zoned = 17,
+
+        /// <summary>WGS 84 / UTM zona 41N, PREFIKSLI easting (false easting 41 500 000; easting ~41,5xx,xxx).</summary>
+        WGS84_UTM_Zone41N_Zoned = 18,
+
+        /// <summary>WGS 84 / UTM zona 42N, PREFIKSLI easting (false easting 42 500 000; easting ~42,5xx,xxx).</summary>
+        WGS84_UTM_Zone42N_Zoned = 19,
+
+        /// <summary>WGS 84 / UTM zona 43N, PREFIKSLI easting (false easting 43 500 000; easting ~43,5xx,xxx).</summary>
+        WGS84_UTM_Zone43N_Zoned = 20
     }
 
     /// <summary>
