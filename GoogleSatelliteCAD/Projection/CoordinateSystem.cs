@@ -23,7 +23,35 @@ namespace GoogleSatelliteCAD.Projection
         /// Pulkovo 1942 / Gauss-Kruger zona 12N, prefikssiz soxta sharqiy (false easting 500000;
         /// EPSG:28462). Easting ~5xx,xxx ko'rinishida — ko'pincha GPS/geodezik qurilma eksporti.
         /// </summary>
-        Pulkovo1942_GK_Zone12N_28462 = 4
+        Pulkovo1942_GK_Zone12N_28462 = 4,
+
+        /// <summary>
+        /// Pulkovo 1942 / Gauss-Kruger — AVTO-ZONA (O'zbekiston uchun 10N..13N).
+        /// Zona chizma koordinatasidagi prefiksli easting qiymatidan avtomatik aniqlanadi
+        /// (masalan easting ~11,5xx,xxx -> zona 11, ~12,5xx,xxx -> zona 12).
+        /// Butun O'zbekiston hududi uchun eng qulay standart tanlov.
+        /// DIQQAT: faqat prefiksli (zonali) easting uchun ishlaydi; prefikssiz (500000)
+        /// easting'da zonani aniqlab bo'lmaydi — u holda aniq zona variantini tanlang.
+        /// </summary>
+        Pulkovo1942_GK_ZoneAuto = 5,
+
+        /// <summary>Pulkovo 1942 / GK zona 10N, prefiksli easting (EPSG:28410, easting ~10,5xx,xxx).</summary>
+        Pulkovo1942_GK_Zone10N = 6,
+
+        /// <summary>Pulkovo 1942 / GK zona 11N, prefiksli easting (EPSG:28411, easting ~11,5xx,xxx).</summary>
+        Pulkovo1942_GK_Zone11N = 7,
+
+        /// <summary>Pulkovo 1942 / GK zona 13N, prefiksli easting (EPSG:28413, easting ~13,5xx,xxx).</summary>
+        Pulkovo1942_GK_Zone13N = 8,
+
+        /// <summary>Pulkovo 1942 / GK zona 10N, prefikssiz easting (EPSG:28460, easting ~5xx,xxx).</summary>
+        Pulkovo1942_GK_Zone10N_28460 = 9,
+
+        /// <summary>Pulkovo 1942 / GK zona 11N, prefikssiz easting (EPSG:28461, easting ~5xx,xxx).</summary>
+        Pulkovo1942_GK_Zone11N_28461 = 10,
+
+        /// <summary>Pulkovo 1942 / GK zona 13N, prefikssiz easting (EPSG:28463, easting ~5xx,xxx).</summary>
+        Pulkovo1942_GK_Zone13N_28463 = 11
     }
 
     /// <summary>

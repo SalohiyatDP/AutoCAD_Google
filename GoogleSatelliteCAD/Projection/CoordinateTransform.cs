@@ -38,13 +38,40 @@ namespace GoogleSatelliteCAD.Projection
                 case CoordinateSystemType.WebMercator_3857:
                     return new CoordinateTransform(new WebMercatorProjection());
 
+                // ---- Prefiksli (zonalangan) easting, EPSG:284xx ----
+                case CoordinateSystemType.Pulkovo1942_GK_Zone10N:
+                    return new CoordinateTransform(new Pulkovo1942Projection(10));
+
+                case CoordinateSystemType.Pulkovo1942_GK_Zone11N:
+                    return new CoordinateTransform(new Pulkovo1942Projection(11));
+
+                case CoordinateSystemType.Pulkovo1942_GK_Zone13N:
+                    return new CoordinateTransform(new Pulkovo1942Projection(13));
+
+                // ---- Prefikssiz easting (false easting 500000), EPSG:2846x ----
+                case CoordinateSystemType.Pulkovo1942_GK_Zone10N_28460:
+                    return new CoordinateTransform(new Pulkovo1942Projection(10, zonedEasting: false));
+
+                case CoordinateSystemType.Pulkovo1942_GK_Zone11N_28461:
+                    return new CoordinateTransform(new Pulkovo1942Projection(11, zonedEasting: false));
+
                 case CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462:
                     // Prefikssiz easting (false easting 500000, EPSG:28462).
                     return new CoordinateTransform(new Pulkovo1942Projection(12, zonedEasting: false));
 
+                case CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463:
+                    return new CoordinateTransform(new Pulkovo1942Projection(13, zonedEasting: false));
+
+                // ---- Avto-zona (prefiksli easting'dan aniqlanadi, O'zbekiston 10..13) ----
+                case CoordinateSystemType.Pulkovo1942_GK_ZoneAuto:
+                    return new CoordinateTransform(new Pulkovo1942Projection(0)); // 0 = avto
+
                 case CoordinateSystemType.Pulkovo1942_GK_Zone12N:
-                default:
                     return new CoordinateTransform(new Pulkovo1942Projection(12));
+
+                default:
+                    // Noma'lum tanlov — butun O'zbekiston uchun avto-zona (eng xavfsiz standart).
+                    return new CoordinateTransform(new Pulkovo1942Projection(0));
             }
         }
 

@@ -30,9 +30,13 @@ namespace GoogleSatelliteCAD.Core
         /// <summary>Pan/Zoom bo'lganda xarita avtomatik yangilanadimi.</summary>
         public bool AutoRefresh { get; set; } = true;
 
-        /// <summary>Chizma (DWG) ishlatadigan koordinata tizimi (odatiy: Pulkovo GK Zona 12N).</summary>
+        /// <summary>
+        /// Chizma (DWG) ishlatadigan koordinata tizimi.
+        /// Odatiy: Pulkovo GK AVTO-ZONA — butun O'zbekiston (10N..13N) bo'ylab ishlaydi,
+        /// zona chizma easting'idagi prefiksdan avtomatik aniqlanadi.
+        /// </summary>
         public CoordinateSystemType CoordinateSystem { get; set; } =
-            CoordinateSystemType.Pulkovo1942_GK_Zone12N;
+            CoordinateSystemType.Pulkovo1942_GK_ZoneAuto;
 
         /// <summary>Parallel ravishda yuklanadigan tilelar soni (yuklab olish oqimlari).</summary>
         public int MaxParallelDownloads { get; set; } = 8;
@@ -98,14 +102,11 @@ namespace GoogleSatelliteCAD.Core
                     using (var fs = File.OpenRead(_settingsFile))
                     {
                         var loaded = (PluginSettings)_serializer.Deserialize(fs);
-                        // Qo'llab-quvvatlanadigan tizimlar: Web Mercator (EPSG:3857),
-                        // Pulkovo GK Zona 12N (EPSG:28412) va Pulkovo GK Zona 12N (EPSG:28462).
-                        // Boshqasi saqlangan bo'lsa, Pulkovo (28412) ga moslaymiz.
-                        if (loaded.CoordinateSystem != CoordinateSystemType.WebMercator_3857
-                            && loaded.CoordinateSystem != CoordinateSystemType.Pulkovo1942_GK_Zone12N
-                            && loaded.CoordinateSystem != CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462)
+                        // Qo'llab-quvvatlanadigan tizim bo'lmasa (masalan eski/yaroqsiz qiymat),
+                        // butun O'zbekiston uchun avto-zonaga moslaymiz.
+                        if (!IsSupported(loaded.CoordinateSystem))
                         {
-                            loaded.CoordinateSystem = CoordinateSystemType.Pulkovo1942_GK_Zone12N;
+                            loaded.CoordinateSystem = CoordinateSystemType.Pulkovo1942_GK_ZoneAuto;
                         }
                         Settings = loaded;
                         return loaded;
@@ -119,6 +120,30 @@ namespace GoogleSatelliteCAD.Core
 
             Settings = new PluginSettings();
             return Settings;
+        }
+
+        /// <summary>
+        /// Sozlamalar oynasida tanlash mumkin bo'lgan (qo'llab-quvvatlanadigan) koordinata
+        /// tizimimi. WGS84_Geographic va WGS84_UTM ataylab yashirin (ichki foydalanish uchun).
+        /// </summary>
+        internal static bool IsSupported(CoordinateSystemType t)
+        {
+            switch (t)
+            {
+                case CoordinateSystemType.WebMercator_3857:
+                case CoordinateSystemType.Pulkovo1942_GK_ZoneAuto:
+                case CoordinateSystemType.Pulkovo1942_GK_Zone10N:
+                case CoordinateSystemType.Pulkovo1942_GK_Zone11N:
+                case CoordinateSystemType.Pulkovo1942_GK_Zone12N:
+                case CoordinateSystemType.Pulkovo1942_GK_Zone13N:
+                case CoordinateSystemType.Pulkovo1942_GK_Zone10N_28460:
+                case CoordinateSystemType.Pulkovo1942_GK_Zone11N_28461:
+                case CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462:
+                case CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>Joriy sozlamalarni diskka yozadi.</summary>
