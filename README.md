@@ -15,9 +15,11 @@ har doim xarita ustida turadi.
 - Google sun'iy yo'ldosh tasvirini DWG fonida real vaqtda ko'rsatish.
 - Zoom/Pan paytida avtomatik yangilanish (ekranda ko'rinayotgan hudud bo'yicha).
 - **Faqat O'zbekiston Respublikasi hududi** uchun tile yuklash (butun dunyo yuklanmaydi).
-- Ikki koordinata tizimi: **Web Mercator (EPSG:3857)** va **Pulkovo 1942 GK Zona 12N**.
+- Koordinata tizimlari: **Pulkovo 1942 Gauss-Krüger** (butun O'zbekiston uchun **10N..13N**
+  zonalari, avto-zona bilan), **WGS 84 / UTM 40N..43N** (toposyomka, easting ~5xx,xxx) va
+  **Web Mercator (EPSG:3857)**.
 - Asinxron + parallel tile yuklash, disk keshi, subdomen aylanishi va qayta urinish.
-- "Google Maps" Ribbon yorlig'i va bir bosishda Kosonsoy tumaniga o'tish.
+- "Google Maps" Ribbon yorlig'i orqali boshqarish.
 - Sozlamalar (WPF) va About oynasi.
 
 ---
@@ -29,7 +31,6 @@ har doim xarita ustida turadi.
 | `GSATON` | Fon xaritani yoqadi. Yoqilgan bo'lsa — ko'rinishni yangilaydi (REFRESH). |
 | `GSATREFRESH` | Ko'rinib turgan hududni qayta yuklaydi (yangilaydi). |
 | `GSATOFF` | Fon xaritani o'chiradi (disk keshi saqlanadi). |
-| `GSATHOME` | Ko'rinishni Namangan vil., Kosonsoy tumaniga olib boradi va yoqadi. |
 | `GSATCLEAR` | Disk keshini (yuklangan tilelarni) tozalaydi. |
 
 DLL **avtomatik yuklanadi** (Autoloader bundle orqali) yoki `NETLOAD` bilan qo'lda yuklanadi.
@@ -40,7 +41,6 @@ DLL **avtomatik yuklanadi** (Autoloader bundle orqali) yoki `NETLOAD` bilan qo'l
 ## Ribbon menyu — "Google Maps"
 
 - **Satellite ON (REFRESH)** — yoqish; yoqilgan bo'lsa, ko'rinishni yangilaydi.
-- **Go to Kosonsoy** — Namangan vil., Kosonsoy tumaniga o'tish (`GSATHOME`).
 - **Satellite OFF** — o'chirish.
 - **Clear Cache** — keshni tozalash.
 - **Coordinate System** — koordinata tizimi va sozlamalar oynasi.
@@ -50,25 +50,74 @@ DLL **avtomatik yuklanadi** (Autoloader bundle orqali) yoki `NETLOAD` bilan qo'l
 
 ## Koordinata tizimlari
 
-| Tizim | Maqsad | Tipik koordinata |
-|-------|--------|------------------|
-| **Pulkovo 1942 / GK Zona 12N (EPSG:28412)** — standart | Aniq lokal ish | easting ~**12,5xx,xxx** |
-| **Pulkovo 1942 / GK Zona 12N (EPSG:28462)** | Qurilma/GPS eksporti | easting ~**5xx,xxx** |
+Butun **O'zbekiston Respublikasi** hududi Gauss-Krüger **10N, 11N, 12N va 13N** zonalari
+bilan qoplanadi (har zona 6° kenglikda). Plagin bu zonalarning barchasini qo'llab-quvvatlaydi.
+
+| Tizim | Maqsad | Tipik easting |
+|-------|--------|---------------|
+| **Pulkovo 1942 / GK AVTO-ZONA (10N..13N)** — **standart** | Butun O'zbekiston, zona avtomatik | prefiksli (~z,5xx,xxx) |
+| **Pulkovo 1942 / GK Zona 10N/11N/12N/13N (EPSG:28410–28413)** | Aniq zona, prefiksli easting | ~**10..13,5xx,xxx** |
+| **Pulkovo 1942 / GK Zona 10N/11N/12N/13N (EPSG:28460–28463)** | Qurilma/GPS eksporti, prefikssiz | ~**5xx,xxx** |
+| **WGS 84 / UTM Zona 40N/41N/42N/43N (EPSG:32640–32643)** | Toposyomka, GNSS/GPS (WGS84), prefikssiz | ~**5xx,xxx** |
+| **WGS 84 / UTM Zona 40N..43N — prefiksli / AVTO-ZONA** | UTM, zona easting'da kodlangan | ~**4z,5xx,xxx** |
 | **WGS 1984 Web Mercator (EPSG:3857)** | Umumiy/keng hudud | metr (~7,7xx,xxx) |
 
-- **Pulkovo GK Z12 (EPSG:28412)** — Krassovskiy 1940 ellipsoidi, markaziy meridian 69°E,
-  zonali false easting **12 500 000** (easting ~12,5xx,xxx, northing ~4,5xx,xxx), WGS84'ga
-  7-parametrli (Bursa-Wolf) datum o'tkazish. **Odatiy (default) tizim.**
-- **Pulkovo GK Z12 (EPSG:28462)** — xuddi shu, lekin prefikssiz false easting **500 000**
-  (easting ~5xx,xxx). Ko'pincha GPS/geodezik qurilma eksportlarida shu variant ishlatiladi.
+**Gauss-Krüger zonalari va markaziy meridianlari (O'zbekiston):**
+
+| Zona | Markaziy meridian | Longitude qamrovi | Prefiksli EPSG | Prefikssiz EPSG |
+|------|-------------------|-------------------|----------------|-----------------|
+| 10N  | 57°E              | 54°–60°E          | 28410          | 28460           |
+| 11N  | 63°E              | 60°–66°E          | 28411          | 28461           |
+| 12N  | 69°E              | 66°–72°E          | 28412          | 28462           |
+| 13N  | 75°E              | 72°–78°E          | 28413          | 28463           |
+
+**WGS 84 / UTM zonalari (O'zbekiston) — toposyomka uchun (easting ~5xx,xxx):**
+
+| UTM zona | Markaziy meridian | Longitude qamrovi | EPSG  |
+|----------|-------------------|-------------------|-------|
+| 40N      | 57°E              | 54°–60°E          | 32640 |
+| 41N      | 63°E              | 60°–66°E          | 32641 |
+| 42N      | 69°E              | 66°–72°E          | 32642 |
+| 43N      | 75°E              | 72°–78°E          | 32643 |
+
+- **AVTO-ZONA (standart, tavsiya etiladi)** — zonani chizma easting'idagi **prefiks**dan
+  avtomatik aniqlaydi (masalan easting ~11,5xx,xxx → zona 11, ~12,5xx,xxx → zona 12). Butun
+  O'zbekiston bo'ylab bitta tanlov bilan ishlaydi. Faqat **prefiksli (zonalangan)** easting
+  uchun; prefikssiz (500000) easting'da aniq zona variantini tanlang.
+- **Prefiksli GK zonalari (EPSG:284xx)** — Krassovskiy 1940 ellipsoidi, zonali false easting
+  = `zona·1 000 000 + 500 000` (easting ~z,5xx,xxx), WGS84'ga 7-parametrli (Bursa-Wolf) datum.
+- **Prefikssiz GK zonalari (EPSG:2846x)** — xuddi shu, lekin false easting **500 000**
+  (easting ~5xx,xxx). Ko'pincha GPS/geodezik qurilma eksportlarida ishlatiladi.
+- **WGS 84 / UTM zonalari — prefikssiz (EPSG:326xx)** — WGS84 ellipsoidi (datum o'tkazish
+  shart emas), k₀ = 0.9996, false easting **500 000** (easting ~5xx,xxx). Toposyomka va
+  GNSS/GPS eksportlari uchun qulay. Markaziy meridianlari GK zonalariga mos (57/63/69/75°E),
+  lekin ellipsoid/masshtab boshqacha. Prefikssiz easting zonani kodlamaydi, shu sababli
+  **aniq zonani qo'lda tanlash kerak** (bu variantda avto-zona yo'q).
+- **WGS 84 / UTM zonalari — prefiksli / AVTO-ZONA** — xuddi shu UTM, lekin false easting =
+  `zona·1 000 000 + 500 000` (masalan zona 42 → easting ~42,5xx,xxx). Zona easting'da
+  kodlangani uchun **AVTO-ZONA ishlaydi** — butun O'zbekiston bo'ylab bitta tanlov bilan
+  (Pulkovo GK avto-zona kabi). Prefiksli UTM (~4z,5xx,xxx) va prefiksli GK (~1z,5xx,xxx)
+  easting diapazonlari ustma-ust tushmaydi.
 - **Web Mercator** — chizma birliklari = Web Mercator metrlari (Google/ArcGIS bilan bir xil).
   Masshtab 1/cos(kenglik); Toshkent kengligida ~1.33× (o'lcham biroz kattaroq ko'rinadi).
 
-> Koordinata tizimini chizmangiz/qurilma ma'lumotiga MOS tanlang: easting ~12,5 mln bo'lsa
-> EPSG:28412, ~5xx ming bo'lsa EPSG:28462. Noto'g'ri tanlansa, xarita mos kelmaydi.
+> Ko'p hollarda **AVTO-ZONA** yetarli. Agar chizmangiz prefikssiz easting'da (~5xx,xxx)
+> bo'lsa, hududingizga mos aniq zonani tanlang (masalan Toshkent/Namangan uchun 12N).
+> Noto'g'ri tanlansa, xarita mos kelmaydi.
 
 > Chizma tanlangan tizimda georeferensiyalangan bo'lishi kerak. Bo'sh chizma (0,0 atrofida)
-> uchun `GSATHOME` orqali Kosonsoy hududiga o'ting.
+> bo'lsa xarita ko'rinmaydi — O'zbekiston hududidagi georeferensiyalangan chizmani oching.
+
+### Xarita ko'rinmayapti? (koordinata tizimi mos kelmasligi)
+
+Eng ko'p uchraydigan sabab — **noto'g'ri koordinata tizimi tanlangani**. Masalan, chizma
+Pulkovo koordinatalarida (easting ~12,5xx,xxx), lekin **Web Mercator** tanlangan bo'lsa,
+o'sha qiymat mercator metr sifatida talqin qilinib, ko'rinish O'zbekistondan tashqariga
+(lon ~112°E) tushadi va xarita **umuman ko'rinmaydi**.
+
+Bunday holatda plagin buyruq qatorida (va `plugin.log` da) **mos tizimni avtomatik taklif
+qiladi** — o'sha tavsiyaga amal qilib, Ribbon → **Coordinate System** orqali to'g'ri tizimni
+tanlang. Ko'p hollarda **Pulkovo GK AVTO-ZONA** (standart) barcha zonalar uchun ishlaydi.
 
 ---
 
@@ -85,7 +134,7 @@ Plagin faqat **O'zbekiston Respublikasi** chegara to'rtburchagi ichidagi tilelar
 ```
 GoogleSatelliteCAD/
 ├── Core/         PluginEntry (IExtensionApplication), ConfigManager, PluginContext, Logger
-├── Commands/     GSATON/GSATREFRESH/GSATHOME, GSATOFF, GSATCLEAR
+├── Commands/     GSATON/GSATREFRESH, GSATOFF, GSATCLEAR
 ├── Projection/   Ellipsoid, Mercator, Pulkovo1942 (Gauss-Kruger + datum), CoordinateTransform, IProjection
 ├── TileEngine/   TileSystem, TileCache, TileDownloader, TileManager (+ interfeyslar)
 ├── Drawing/      LayerManager, RasterManager, ViewportTracker
@@ -167,12 +216,13 @@ Plaginni bir marta o'rnatib qo'ysangiz, AutoCAD har safar ochilganda **avtomatik
 
 ## Foydalanish
 
-1. AutoCAD Mechanical 2021 ni oching (plagin avtomatik yuklanadi).
-2. Ribbon **Google Maps → Coordinate System** orqali tizimni tanlang (Web Mercator yoki Pulkovo GK Z12).
+1. AutoCAD Mechanical 2021 ni oching (plagin bundle orqali avtomatik yuklanadi; yoki
+   `NETLOAD` → `GoogleSatelliteCAD.dll`).
+2. Ribbon **Google Maps → Coordinate System** orqali tizimni tanlang (odatiy: Pulkovo GK
+   **AVTO-ZONA** — butun O'zbekiston; yoki aniq zona 10N..13N, yoxud Web Mercator).
 3. **Satellite ON (REFRESH)** bosing yoki `GSATON` kiriting.
-4. Bo'sh chizmada bo'lsangiz — **Go to Kosonsoy** (`GSATHOME`) bilan hududga o'ting.
-5. Zoom/Pan qiling — xarita ko'rinayotgan hududga avtomatik moslashadi.
-6. Yangilash kerak bo'lsa — **Satellite ON (REFRESH)** yoki `GSATREFRESH`.
+4. Zoom/Pan qiling — xarita ko'rinayotgan hududga avtomatik moslashadi.
+5. Yangilash kerak bo'lsa — **Satellite ON (REFRESH)** yoki `GSATREFRESH`.
 
 ---
 

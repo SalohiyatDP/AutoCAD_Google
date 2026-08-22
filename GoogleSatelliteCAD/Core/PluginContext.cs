@@ -71,52 +71,6 @@ namespace GoogleSatelliteCAD.Core
             Logger.Info("Koordinata tizimi yangilandi: " + ConfigManager.Instance.Settings.CoordinateSystem);
         }
 
-        /// <summary>
-        /// Ko'rinishni O'zbekiston hududidagi standart nuqtaga (Namangan viloyati,
-        /// Kosonsoy tumani) olib boradi va fon xaritani yoqadi. Bo'sh chizmada
-        /// "xarita ko'rinmayapti" holatini hal qiladi.
-        /// Asosiy (UI) oqimda, buyruq kontekstida chaqirilishi kerak.
-        /// </summary>
-        public void GoHome()
-        {
-            Document doc = Application.DocumentManager.MdiActiveDocument;
-            if (doc == null) return;
-
-            if (!IsActive) Enable();
-
-            // Standart nuqta (Kosonsoy) va ~20 km ko'rinish kengligini joriy CRS ga o'tkazamiz.
-            const double groundWidthMeters = 20000.0;
-            double dLon = groundWidthMeters / 2.0 / (111320.0 * Math.Cos(HomeLat * Math.PI / 180.0));
-
-            DrawingPoint center = Transform.GeographicToDrawing(HomeLon, HomeLat);
-            DrawingPoint east = Transform.GeographicToDrawing(HomeLon + dLon, HomeLat);
-            DrawingPoint north = Transform.GeographicToDrawing(HomeLon, HomeLat + dLon);
-
-            double halfW = Math.Abs(east.X - center.X);
-            double halfH = Math.Abs(north.Y - center.Y);
-            double width = Math.Max(halfW, halfH) * 2.0;
-            if (!(width > 0) || double.IsNaN(width) || double.IsInfinity(width)) width = groundWidthMeters;
-
-            try
-            {
-                Editor ed = doc.Editor;
-                using (ViewTableRecord vtr = ed.GetCurrentView())
-                {
-                    vtr.CenterPoint = new Point2d(center.X, center.Y);
-                    vtr.Width = width;
-                    vtr.Height = width;
-                    ed.SetCurrentView(vtr);
-                }
-                Logger.Info($"Uyga (Kosonsoy tumani) o'tildi: markaz drawing=({center.X:F1},{center.Y:F1}).");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error("Uyga o'tishda xatolik.", ex);
-            }
-
-            RequestRefresh();
-        }
-
         // ============================ Yoqish / O'chirish ============================
 
         /// <summary>
@@ -254,12 +208,13 @@ namespace GoogleSatelliteCAD.Core
 
                 if (!IsValidGeo(c1) || !IsValidGeo(c2) || !IsValidGeo(c3) || !IsValidGeo(c4))
                 {
+                    double vcx0 = (view.MinX + view.MaxX) / 2.0;
+                    double vcy0 = (view.MinY + view.MaxY) / 2.0;
                     Logger.Warn(
                         "Joriy ko'rinish tanlangan koordinata tizimida (" + Transform.Name +
                         ") haqiqiy geografik hududga to'g'ri kelmadi. " +
                         "Chizma shu CRS da joylashtirilmagan bo'lishi mumkin. " +
-                        "Ribbon -> Coordinate System orqali mos tizimni tanlang " +
-                        "(masalan, EPSG:3857 yoki WGS84 Geographic).");
+                        SuggestCrsHint(vcx0, vcy0));
                     return;
                 }
 
@@ -297,10 +252,12 @@ namespace GoogleSatelliteCAD.Core
                 if (tMinLon >= tMaxLon || tMinLat >= tMaxLat)
                 {
                     // Ko'rinish O'zbekiston hududidan butunlay tashqarida — eski tilelarni tozalaymiz.
+                    double vcx1 = (view.MinX + view.MaxX) / 2.0;
+                    double vcy1 = (view.MinY + view.MaxY) / 2.0;
                     Logger.Warn($"Ko'rinish O'zbekiston hududidan TASHQARIDA: " +
-                                $"lon {minLon:F3}..{maxLon:F3}, lat {minLat:F3}..{maxLat:F3} " +
+                                $"CRS={Transform.Name}; lon {minLon:F3}..{maxLon:F3}, lat {minLat:F3}..{maxLat:F3} " +
                                 $"(ruxsat: lon {UzWestLon}..{UzEastLon}, lat {UzSouthLat}..{UzNorthLat}). " +
-                                "Xaritani ko'rish uchun O'zbekiston hududiga o'ting.");
+                                SuggestCrsHint(vcx1, vcy1));
                     Interlocked.Exchange(ref _pendingPlacements, new List<TilePlacement>());
                     return;
                 }
@@ -472,10 +429,6 @@ namespace GoogleSatelliteCAD.Core
         private const double UzSouthLat = 37.1;
         private const double UzNorthLat = 45.65;
 
-        // "Uyga" (GSATHOME) buyrug'i uchun standart nuqta — Namangan viloyati, Kosonsoy tumani.
-        private const double HomeLon = 71.5503;
-        private const double HomeLat = 41.2456;
-
         /// <summary>.NET Framework 4.8 da double.IsFinite mavjud emas — o'zimiz tekshiramiz.</summary>
         private static bool IsFinite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
 
@@ -485,6 +438,62 @@ namespace GoogleSatelliteCAD.Core
             return IsFinite(g.Lon) && IsFinite(g.Lat)
                    && g.Lon >= -180.0 && g.Lon <= 180.0
                    && g.Lat >= -90.0 && g.Lat <= 90.0;
+        }
+
+        /// <summary>Nuqta O'zbekiston chegara to'rtburchagi ichidami.</summary>
+        private static bool IsInUzbekistan(GeoPoint g)
+        {
+            return IsValidGeo(g)
+                   && g.Lon >= UzWestLon && g.Lon <= UzEastLon
+                   && g.Lat >= UzSouthLat && g.Lat <= UzNorthLat;
+        }
+
+        /// <summary>
+        /// Joriy koordinata tizimi ko'rinishni O'zbekistondan tashqarida ko'rsatganda,
+        /// SABABINI tashxislaydi: xuddi shu chizma markazini boshqa CRS'larda sinab ko'rib,
+        /// qaysi biri O'zbekiston ichiga tushishini aniqlaydi va foydalanuvchiga
+        /// aniq, amaliy tavsiya beradi. Ko'pincha "WebMercator ishlamayapti" holati —
+        /// aslida chizma Pulkovo koordinatalarida bo'lib, noto'g'ri CRS tanlangani.
+        /// </summary>
+        private static string SuggestCrsHint(double cx, double cy)
+        {
+            CoordinateSystemType current = ConfigManager.Instance.Settings.CoordinateSystem;
+
+            // Ustuvorlik tartibida sinaladigan nomzod CRS'lar.
+            var candidates = new[]
+            {
+                CoordinateSystemType.Pulkovo1942_GK_ZoneAuto,
+                CoordinateSystemType.WebMercator_3857,
+                CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462,
+                CoordinateSystemType.Pulkovo1942_GK_Zone11N_28461,
+                CoordinateSystemType.Pulkovo1942_GK_Zone10N_28460,
+                CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463,
+                // Prefiksli UTM (easting ~4x,5xx,xxx — GK prefiksli ~1x,5xx,xxx dan ajralib turadi).
+                CoordinateSystemType.WGS84_UTM_ZoneAuto,
+                // WGS 84 / UTM prefikssiz zonalar (easting ~5xx,xxx — Pulkovo prefikssizga geometrik yaqin).
+                CoordinateSystemType.WGS84_UTM_Zone42N,
+                CoordinateSystemType.WGS84_UTM_Zone41N,
+                CoordinateSystemType.WGS84_UTM_Zone43N,
+                CoordinateSystemType.WGS84_UTM_Zone40N,
+            };
+
+            foreach (CoordinateSystemType type in candidates)
+            {
+                if (type == current) continue;
+                try
+                {
+                    CoordinateTransform t = CoordinateTransform.Create(type);
+                    if (IsInUzbekistan(t.DrawingToGeographic(cx, cy)))
+                    {
+                        return "Ko'rinadiki, koordinata tizimi noto'g'ri tanlangan. " +
+                               "Ribbon -> Coordinate System orqali quyidagini tanlang: \"" + t.Name + "\".";
+                    }
+                }
+                catch { /* nomzodni o'tkazib yuboramiz */ }
+            }
+
+            return "Xaritani ko'rish uchun O'zbekiston hududiga o'ting yoki " +
+                   "Ribbon -> Coordinate System orqali chizmangizga mos tizimni tanlang.";
         }
 
         /// <summary>

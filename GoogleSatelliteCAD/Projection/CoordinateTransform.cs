@@ -33,18 +33,74 @@ namespace GoogleSatelliteCAD.Projection
                     return new CoordinateTransform(new GeographicProjection());
 
                 case CoordinateSystemType.WGS84_UTM:
-                    return new CoordinateTransform(new UtmProjection(0)); // avto zona
+                    return new CoordinateTransform(new UtmProjection(0)); // avto zona (ichki)
+
+                // ---- WGS 84 / UTM zonalari (O'zbekiston 40N..43N), easting ~5xx,xxx ----
+                case CoordinateSystemType.WGS84_UTM_Zone40N:
+                    return new CoordinateTransform(new UtmProjection(40));
+
+                case CoordinateSystemType.WGS84_UTM_Zone41N:
+                    return new CoordinateTransform(new UtmProjection(41));
+
+                case CoordinateSystemType.WGS84_UTM_Zone42N:
+                    return new CoordinateTransform(new UtmProjection(42));
+
+                case CoordinateSystemType.WGS84_UTM_Zone43N:
+                    return new CoordinateTransform(new UtmProjection(43));
+
+                // ---- WGS 84 / UTM PREFIKSLI easting (false easting = zona·1e6 + 500000) ----
+                case CoordinateSystemType.WGS84_UTM_ZoneAuto:
+                    return new CoordinateTransform(new UtmProjection(0)); // 0 = avto (prefiksli)
+
+                case CoordinateSystemType.WGS84_UTM_Zone40N_Zoned:
+                    return new CoordinateTransform(new UtmProjection(40, zonedEasting: true));
+
+                case CoordinateSystemType.WGS84_UTM_Zone41N_Zoned:
+                    return new CoordinateTransform(new UtmProjection(41, zonedEasting: true));
+
+                case CoordinateSystemType.WGS84_UTM_Zone42N_Zoned:
+                    return new CoordinateTransform(new UtmProjection(42, zonedEasting: true));
+
+                case CoordinateSystemType.WGS84_UTM_Zone43N_Zoned:
+                    return new CoordinateTransform(new UtmProjection(43, zonedEasting: true));
 
                 case CoordinateSystemType.WebMercator_3857:
                     return new CoordinateTransform(new WebMercatorProjection());
+
+                // ---- Prefiksli (zonalangan) easting, EPSG:284xx ----
+                case CoordinateSystemType.Pulkovo1942_GK_Zone10N:
+                    return new CoordinateTransform(new Pulkovo1942Projection(10));
+
+                case CoordinateSystemType.Pulkovo1942_GK_Zone11N:
+                    return new CoordinateTransform(new Pulkovo1942Projection(11));
+
+                case CoordinateSystemType.Pulkovo1942_GK_Zone13N:
+                    return new CoordinateTransform(new Pulkovo1942Projection(13));
+
+                // ---- Prefikssiz easting (false easting 500000), EPSG:2846x ----
+                case CoordinateSystemType.Pulkovo1942_GK_Zone10N_28460:
+                    return new CoordinateTransform(new Pulkovo1942Projection(10, zonedEasting: false));
+
+                case CoordinateSystemType.Pulkovo1942_GK_Zone11N_28461:
+                    return new CoordinateTransform(new Pulkovo1942Projection(11, zonedEasting: false));
 
                 case CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462:
                     // Prefikssiz easting (false easting 500000, EPSG:28462).
                     return new CoordinateTransform(new Pulkovo1942Projection(12, zonedEasting: false));
 
+                case CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463:
+                    return new CoordinateTransform(new Pulkovo1942Projection(13, zonedEasting: false));
+
+                // ---- Avto-zona (prefiksli easting'dan aniqlanadi, O'zbekiston 10..13) ----
+                case CoordinateSystemType.Pulkovo1942_GK_ZoneAuto:
+                    return new CoordinateTransform(new Pulkovo1942Projection(0)); // 0 = avto
+
                 case CoordinateSystemType.Pulkovo1942_GK_Zone12N:
-                default:
                     return new CoordinateTransform(new Pulkovo1942Projection(12));
+
+                default:
+                    // Noma'lum tanlov — butun O'zbekiston uchun avto-zona (eng xavfsiz standart).
+                    return new CoordinateTransform(new Pulkovo1942Projection(0));
             }
         }
 

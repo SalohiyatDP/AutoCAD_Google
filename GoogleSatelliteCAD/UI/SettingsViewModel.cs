@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using GoogleSatelliteCAD.Core;
 using GoogleSatelliteCAD.Projection;
@@ -28,9 +29,10 @@ namespace GoogleSatelliteCAD.UI
             LoadFrom(settings);
         }
 
-        /// <summary>Tanlash mumkin bo'lgan barcha koordinata tizimlari.</summary>
+        /// <summary>Tanlash mumkin bo'lgan (qo'llab-quvvatlanadigan) koordinata tizimlari.</summary>
         public IReadOnlyList<CoordinateSystemType> AvailableCoordinateSystems { get; } =
-            (CoordinateSystemType[])Enum.GetValues(typeof(CoordinateSystemType));
+            ((CoordinateSystemType[])Enum.GetValues(typeof(CoordinateSystemType)))
+                .Where(ConfigManager.IsSupported).ToArray();
 
         public string TileServerUrl
         {

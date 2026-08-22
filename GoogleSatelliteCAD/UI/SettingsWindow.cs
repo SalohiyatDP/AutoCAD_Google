@@ -64,15 +64,60 @@ namespace GoogleSatelliteCAD.UI
 
             AddLabel(form, 1, "Koordinata tizimi:");
             _crsCombo = new ComboBox { Margin = new Thickness(0, 6, 0, 6) };
-            // Qo'llab-quvvatlanadigan tizimlar (EPSG kodlari bilan aniq ko'rsatiladi):
-            //  - WGS 1984 Web Mercator (EPSG:3857): umumiy/keng hudud uchun.
-            //  - Pulkovo 1942 / GK Zona 12N (EPSG:28412): aniq lokal ish uchun.
+            // Qo'llab-quvvatlanadigan tizimlar (EPSG kodlari bilan aniq ko'rsatiladi).
+            // Butun O'zbekiston hududi Gauss-Kruger 10N..13N zonalari bilan qoplanadi.
+
+            // Tavsiya etiladigan standart: avto-zona (butun O'zbekiston bo'ylab).
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_ZoneAuto,
+                "Pulkovo 1942 / GK AVTO-ZONA — butun O'zbekiston (10N..13N, prefiksli easting) [tavsiya]",
+                s.CoordinateSystem);
+
+            // Prefiksli (zonalangan) easting, EPSG:284xx — easting ~zona,5xx,xxx.
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone10N,
+                "Pulkovo 1942 / GK Zona 10N (EPSG:28410, easting ~10,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone11N,
+                "Pulkovo 1942 / GK Zona 11N (EPSG:28411, easting ~11,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone12N,
+                "Pulkovo 1942 / GK Zona 12N (EPSG:28412, easting ~12,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone13N,
+                "Pulkovo 1942 / GK Zona 13N (EPSG:28413, easting ~13,5xx,xxx)", s.CoordinateSystem);
+
+            // Prefikssiz easting (false easting 500000), EPSG:2846x — easting ~5xx,xxx.
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone10N_28460,
+                "Pulkovo 1942 / GK Zona 10N (EPSG:28460, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone11N_28461,
+                "Pulkovo 1942 / GK Zona 11N (EPSG:28461, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462,
+                "Pulkovo 1942 / GK Zona 12N (EPSG:28462, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463,
+                "Pulkovo 1942 / GK Zona 13N (EPSG:28463, easting ~5xx,xxx)", s.CoordinateSystem);
+
+            // WGS 84 / UTM zonalari (O'zbekiston 40N..43N) — prefikssiz, easting ~5xx,xxx (toposyomka).
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone40N,
+                "WGS 84 / UTM Zona 40N (EPSG:32640, MM 57°E, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone41N,
+                "WGS 84 / UTM Zona 41N (EPSG:32641, MM 63°E, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone42N,
+                "WGS 84 / UTM Zona 42N (EPSG:32642, MM 69°E, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone43N,
+                "WGS 84 / UTM Zona 43N (EPSG:32643, MM 75°E, easting ~5xx,xxx)", s.CoordinateSystem);
+
+            // WGS 84 / UTM PREFIKSLI easting (false easting = zona·1e6 + 500000) — easting ~zona,5xx,xxx.
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_ZoneAuto,
+                "WGS 84 / UTM AVTO-ZONA — butun O'zbekiston (40N..43N, prefiksli easting)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone40N_Zoned,
+                "WGS 84 / UTM Zona 40N — prefiksli (easting ~40,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone41N_Zoned,
+                "WGS 84 / UTM Zona 41N — prefiksli (easting ~41,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone42N_Zoned,
+                "WGS 84 / UTM Zona 42N — prefiksli (easting ~42,5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone43N_Zoned,
+                "WGS 84 / UTM Zona 43N — prefiksli (easting ~43,5xx,xxx)", s.CoordinateSystem);
+
+            // Umumiy/keng hudud uchun.
             AddCrsItem(CoordinateSystemType.WebMercator_3857,
                 "WGS 1984 Web Mercator (EPSG:3857)", s.CoordinateSystem);
-            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone12N,
-                "Pulkovo 1942 / Gauss-Kruger Zona 12N (EPSG:28412, easting ~12,5xx,xxx)", s.CoordinateSystem);
-            AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462,
-                "Pulkovo 1942 / Gauss-Kruger Zona 12N (EPSG:28462, easting ~5xx,xxx)", s.CoordinateSystem);
+
             if (_crsCombo.SelectedIndex < 0) _crsCombo.SelectedIndex = 0;
             PlaceInForm(form, _crsCombo, 1);
 

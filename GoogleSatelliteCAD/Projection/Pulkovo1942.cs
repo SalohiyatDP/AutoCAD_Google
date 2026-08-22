@@ -211,38 +211,116 @@ namespace GoogleSatelliteCAD.Projection
     /// Pulkovo 1942 (SK-42) Gauss-Kruger proyeksiyasi.
     /// Krassovskiy 1940 ellipsoidida hisoblanadi va WGS84 ga
     /// 7 parametrli datum o'tkazish orqali bog'lanadi.
+    ///
+    /// Har qanday GK zonasi (masalan, O'zbekiston uchun 10N..13N) bilan ishlaydi.
+    /// AVTO-ZONA rejimida (zone &lt;= 0) zona chizma koordinatasidagi prefiksli
+    /// easting (yoki geografik longitude) qiymatidan har bir chaqiriqda aniqlanadi —
+    /// shu tufayli butun O'zbekiston hududi bo'ylab bitta tanlov bilan ishlash mumkin.
     /// </summary>
     public sealed class Pulkovo1942Projection : IProjection
     {
-        private readonly TransverseMercator _tm;
-        private readonly DatumShift _datum;
-        private readonly int _zone;
-        private readonly bool _zoned;
+        // O'zbekiston hududini qamrab oluvchi Gauss-Kruger zonalari diapazoni.
+        private const int MinUzZone = 10; // markaziy meridian 57°E (54..60°E)
+        private const int MaxUzZone = 13; // markaziy meridian 75°E (72..78°E)
 
-        /// <param name="zone">Gauss-Kruger zonasi (masalan, 12).</param>
+        private readonly DatumShift _datum = DatumShift.Pulkovo1942ToWgs84;
+        private readonly bool _zoned;
+        private readonly bool _auto;
+        private readonly int _zone;                 // aniq zona (auto bo'lsa 0)
+        private readonly TransverseMercator _tm;    // aniq zona uchun TM (auto bo'lsa null)
+
+        // Avto-rejimda zona bo'yicha TM'larni keshlaymiz (har chaqiriqda qayta qurmaslik uchun).
+        private readonly System.Collections.Generic.Dictionary<int, TransverseMercator> _tmCache;
+
+        // Avto-rejimda: chizma koordinatasidan (easting) aniqlangan OXIRGI zona.
+        // Chizma bitta zonada bo'lgani uchun bu — zonaning ISHONCHLI manbasi.
+        // FromGeographic'da longitude'dan aniqlash o'rniga shu ishlatiladi, aks holda
+        // ko'rinish zona chegarasiga (masalan lon=66 yoki 72) yaqinlashganda ToGeographic
+        // (easting bo'yicha) va FromGeographic (lon bo'yicha) turli zona tanlab, uniform
+        // transformni buzardi va xarita chetga siljib ko'rinmay qolardi.
+        private int _autoLastZone; // 0 = hali aniqlanmagan
+
+        /// <param name="zone">
+        /// Gauss-Kruger zonasi (masalan, 12). 0 yoki manfiy bo'lsa — AVTO-ZONA rejimi
+        /// (zona easting/longitude'dan avtomatik aniqlanadi, O'zbekiston uchun 10..13).
+        /// </param>
         /// <param name="zonedEasting">
         /// true (standart) — zona prefiksli soxta sharqiy (false easting = zona·1e6 + 500000,
         ///   masalan 12 500 000; EPSG:284xx). Tipik easting ~12,5xx,xxx.
-        /// false — prefikssiz (false easting = 500 000; EPSG:286xx, masalan 28462).
+        /// false — prefikssiz (false easting = 500 000; EPSG:2846x, masalan 28462).
         ///   Tipik easting ~5xx,xxx. Ko'pincha GPS/geodezik qurilma eksportlarida.
+        ///   Avto-zona faqat prefiksli (zonalangan) easting bilan ishlaydi.
         /// </param>
         public Pulkovo1942Projection(int zone, bool zonedEasting = true)
         {
-            _zone = zone;
             _zoned = zonedEasting;
-            double centralMeridian = 6.0 * zone - 3.0;        // zona markaziy meridiani
-            double falseEasting = zonedEasting ? (zone * 1_000_000.0 + 500_000.0) : 500_000.0;
-            _tm = new TransverseMercator(Ellipsoid.Krassovsky1940,
-                                         centralMeridian, 0.0, 1.0, falseEasting, 0.0);
-            _datum = DatumShift.Pulkovo1942ToWgs84;
+
+            if (zone <= 0)
+            {
+                // Avto-zona (prefiksli easting talab qilinadi).
+                _auto = true;
+                _zone = 0;
+                _tmCache = new System.Collections.Generic.Dictionary<int, TransverseMercator>();
+            }
+            else
+            {
+                _zone = zone;
+                _tm = BuildTm(zone);
+            }
         }
 
-        public string Name => $"Pulkovo 1942 / GK zona {_zone}N (EPSG:{(_zoned ? 28400 : 28460) + _zone})";
+        /// <summary>Berilgan zona uchun Krassovskiy TM (Gauss-Kruger) proyeksiyasini quradi.</summary>
+        private TransverseMercator BuildTm(int zone)
+        {
+            double centralMeridian = 6.0 * zone - 3.0;        // zona markaziy meridiani
+            double falseEasting = _zoned ? (zone * 1_000_000.0 + 500_000.0) : 500_000.0;
+            return new TransverseMercator(Ellipsoid.Krassovsky1940,
+                                          centralMeridian, 0.0, 1.0, falseEasting, 0.0);
+        }
+
+        /// <summary>Avto-rejimda zona bo'yicha keshlangan TM ni qaytaradi.</summary>
+        private TransverseMercator TmForZone(int zone)
+        {
+            if (!_auto) return _tm;
+            if (!_tmCache.TryGetValue(zone, out TransverseMercator tm))
+            {
+                tm = BuildTm(zone);
+                _tmCache[zone] = tm;
+            }
+            return tm;
+        }
+
+        /// <summary>Zonani O'zbekiston diapazoniga (10..13) cheklaydi.</summary>
+        private static int ClampUzZone(int zone)
+            => zone < MinUzZone ? MinUzZone : (zone > MaxUzZone ? MaxUzZone : zone);
+
+        /// <summary>Prefiksli easting'dan zonani aniqlaydi (masalan 12,5xx,xxx -> 12).</summary>
+        private static int ZoneFromEasting(double easting)
+            => ClampUzZone((int)Math.Floor(easting / 1_000_000.0));
+
+        /// <summary>Longitude (gradus)'dan GK zonasini aniqlaydi.</summary>
+        private static int ZoneFromLon(double lonDeg)
+            => ClampUzZone((int)Math.Floor(lonDeg / 6.0) + 1);
+
+        public string Name => _auto
+            ? $"Pulkovo 1942 / GK avto-zona {MinUzZone}N..{MaxUzZone}N (O'zbekiston)"
+            : $"Pulkovo 1942 / GK zona {_zone}N (EPSG:{(_zoned ? 28400 : 28450) + _zone})";
 
         public GeoPoint ToGeographic(double x, double y)
         {
+            // Avto-rejimda zonani chizma easting'ining prefiksidan aniqlaymiz (ishonchli manba)
+            // va uni keshlaymiz — FromGeographic shu zonadan foydalanadi (izchillik uchun).
+            TransverseMercator tm;
+            if (_auto)
+            {
+                int zone = ZoneFromEasting(x);
+                _autoLastZone = zone;
+                tm = TmForZone(zone);
+            }
+            else tm = _tm;
+
             // 1. GK (Krassovskiy) -> Krassovskiy lat/lon.
-            _tm.Inverse(x, y, out double lonK, out double latK);
+            tm.Inverse(x, y, out double lonK, out double latK);
             // 2. Krassovskiy geografik -> geosentrik.
             GeodeticTransform.GeographicToGeocentric(Ellipsoid.Krassovsky1940, lonK, latK,
                 out double gx, out double gy, out double gz);
@@ -257,6 +335,18 @@ namespace GoogleSatelliteCAD.Projection
 
         public DrawingPoint FromGeographic(double lon, double lat)
         {
+            // Avto-rejimda: yangilash oqimida ToGeographic (easting'dan zona) doim oldin
+            // chaqilgani uchun o'sha aniqlangan zonani ishlatamiz — bu ikki yo'nalish
+            // izchilligini ta'minlaydi. Zaxira sifatida (agar hali aniqlanmagan bo'lsa)
+            // longitude'dan aniqlaymiz.
+            TransverseMercator tm;
+            if (_auto)
+            {
+                int zone = _autoLastZone > 0 ? _autoLastZone : ZoneFromLon(lon);
+                tm = TmForZone(zone);
+            }
+            else tm = _tm;
+
             // 1. WGS84 geografik -> geosentrik.
             GeodeticTransform.GeographicToGeocentric(Ellipsoid.WGS84, lon, lat,
                 out double wx, out double wy, out double wz);
@@ -267,7 +357,7 @@ namespace GoogleSatelliteCAD.Projection
             GeodeticTransform.GeocentricToGeographic(Ellipsoid.Krassovsky1940, gx, gy, gz,
                 out double lonK, out double latK);
             // 4. Krassovskiy lat/lon -> GK easting/northing.
-            _tm.Forward(lonK, latK, out double e, out double n);
+            tm.Forward(lonK, latK, out double e, out double n);
             return new DrawingPoint(e, n);
         }
     }
@@ -279,54 +369,113 @@ namespace GoogleSatelliteCAD.Projection
     /// </summary>
     public sealed class UtmProjection : IProjection
     {
-        private TransverseMercator _tm;
-        private int _zone;
-        private bool _zoneFixed;
-        private bool _northern = true;
+        // O'zbekiston hududini qamrab oluvchi UTM zonalari diapazoni (shimoliy yarim shar).
+        private const int MinUzZone = 40; // markaziy meridian 57°E (54..60°E)
+        private const int MaxUzZone = 43; // markaziy meridian 75°E (72..78°E)
 
-        /// <param name="zone">UTM zonasi (1..60). 0 bo'lsa, birinchi
-        /// FromGeographic chaqiruvida avtomatik aniqlanadi.</param>
-        public UtmProjection(int zone = 0)
+        private readonly bool _zoned;
+        private readonly bool _auto;
+        private readonly int _zone;                 // aniq zona (auto bo'lsa 0)
+        private readonly TransverseMercator _tm;     // aniq zona uchun TM (auto bo'lsa null)
+        private readonly System.Collections.Generic.Dictionary<int, TransverseMercator> _tmCache;
+
+        // Avto-rejimda easting'dan aniqlangan oxirgi zona (ToGeographic va FromGeographic
+        // izchilligini ta'minlaydi — Pulkovo avto-zona bilan bir xil mantiq).
+        private int _autoLastZone; // 0 = hali aniqlanmagan
+
+        /// <param name="zone">
+        /// UTM zonasi (masalan, 42). 0 yoki manfiy bo'lsa — AVTO-ZONA rejimi
+        /// (zona prefiksli easting'dan avtomatik aniqlanadi, O'zbekiston uchun 40..43).
+        /// </param>
+        /// <param name="zonedEasting">
+        /// false (standart UTM) — false easting = 500 000 (easting ~5xx,xxx). Zona easting'da
+        ///   kodlanmaydi, shu sababli avto-zona ishlamaydi — aniq zonani tanlang.
+        /// true — prefiksli false easting = zona·1e6 + 500000 (masalan 42 500 000; easting
+        ///   ~42,5xx,xxx). Zona easting'da kodlangani uchun avto-zona ishlaydi.
+        /// </param>
+        public UtmProjection(int zone = 0, bool zonedEasting = false)
         {
-            if (zone >= 1 && zone <= 60)
+            if (zone <= 0)
+            {
+                // Avto-zona faqat prefiksli easting bilan aniqlanadi.
+                _auto = true;
+                _zoned = true;
+                _zone = 0;
+                _tmCache = new System.Collections.Generic.Dictionary<int, TransverseMercator>();
+            }
+            else
             {
                 _zone = zone;
-                _zoneFixed = true;
-                BuildTm();
+                _zoned = zonedEasting;
+                _tm = BuildTm(zone);
             }
         }
 
-        public string Name => _zoneFixed ? $"WGS84 / UTM zona {_zone}{(_northern ? "N" : "S")}" : "WGS84 / UTM (avto zona)";
-
-        private void BuildTm()
+        /// <summary>Berilgan zona uchun WGS84 UTM (Transverse Mercator) proyeksiyasini quradi.</summary>
+        private TransverseMercator BuildTm(int zone)
         {
-            double centralMeridian = (_zone - 1) * 6.0 - 180.0 + 3.0;
-            double falseNorthing = _northern ? 0.0 : 10_000_000.0;
-            _tm = new TransverseMercator(Ellipsoid.WGS84, centralMeridian, 0.0,
-                                         0.9996, 500_000.0, falseNorthing);
+            double centralMeridian = (zone - 1) * 6.0 - 180.0 + 3.0;
+            double falseEasting = _zoned ? (zone * 1_000_000.0 + 500_000.0) : 500_000.0;
+            // Shimoliy yarim shar: false northing = 0. UTM masshtabi k0 = 0.9996.
+            return new TransverseMercator(Ellipsoid.WGS84, centralMeridian, 0.0,
+                                          0.9996, falseEasting, 0.0);
         }
+
+        private TransverseMercator TmForZone(int zone)
+        {
+            if (!_auto) return _tm;
+            if (!_tmCache.TryGetValue(zone, out TransverseMercator tm))
+            {
+                tm = BuildTm(zone);
+                _tmCache[zone] = tm;
+            }
+            return tm;
+        }
+
+        private static int ClampUzZone(int zone)
+            => zone < MinUzZone ? MinUzZone : (zone > MaxUzZone ? MaxUzZone : zone);
+
+        /// <summary>Prefiksli easting'dan zonani aniqlaydi (masalan 42,5xx,xxx -> 42).</summary>
+        private static int ZoneFromEasting(double easting)
+            => ClampUzZone((int)Math.Floor(easting / 1_000_000.0));
+
+        /// <summary>Longitude (gradus)'dan UTM zonasini aniqlaydi.</summary>
+        private static int ZoneFromLon(double lonDeg)
+            => ClampUzZone((int)Math.Floor((lonDeg + 180.0) / 6.0) + 1);
+
+        public string Name => _auto
+            ? $"WGS84 / UTM avto-zona {MinUzZone}N..{MaxUzZone}N (O'zbekiston, prefiksli)"
+            : $"WGS84 / UTM zona {_zone}N (EPSG:{32600 + _zone}{(_zoned ? ", prefiksli" : "")})";
 
         public GeoPoint ToGeographic(double x, double y)
         {
-            if (_tm == null)
+            // Avto-rejimda zonani prefiksli easting'dan aniqlab keshlaymiz (ishonchli manba).
+            TransverseMercator tm;
+            if (_auto)
             {
-                // Zona hali aniqlanmagan — xavfsiz standart (zona 12).
-                _zone = 12;
-                BuildTm();
+                int zone = ZoneFromEasting(x);
+                _autoLastZone = zone;
+                tm = TmForZone(zone);
             }
-            _tm.Inverse(x, y, out double lon, out double lat);
+            else tm = _tm;
+
+            tm.Inverse(x, y, out double lon, out double lat);
             return new GeoPoint(lon, lat);
         }
 
         public DrawingPoint FromGeographic(double lon, double lat)
         {
-            if (!_zoneFixed && _tm == null)
+            // Avto-rejimda: ToGeographic aniqlagan zonadan foydalanamiz (izchillik), aks holda
+            // (hali aniqlanmagan bo'lsa) longitude'dan aniqlaymiz.
+            TransverseMercator tm;
+            if (_auto)
             {
-                _zone = (int)Math.Floor((lon + 180.0) / 6.0) + 1;
-                _northern = lat >= 0.0;
-                BuildTm();
+                int zone = _autoLastZone > 0 ? _autoLastZone : ZoneFromLon(lon);
+                tm = TmForZone(zone);
             }
-            _tm.Forward(lon, lat, out double e, out double n);
+            else tm = _tm;
+
+            tm.Forward(lon, lat, out double e, out double n);
             return new DrawingPoint(e, n);
         }
     }
