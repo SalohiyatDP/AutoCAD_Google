@@ -232,6 +232,14 @@ namespace GoogleSatelliteCAD.Projection
         // Avto-rejimda zona bo'yicha TM'larni keshlaymiz (har chaqiriqda qayta qurmaslik uchun).
         private readonly System.Collections.Generic.Dictionary<int, TransverseMercator> _tmCache;
 
+        // Avto-rejimda: chizma koordinatasidan (easting) aniqlangan OXIRGI zona.
+        // Chizma bitta zonada bo'lgani uchun bu — zonaning ISHONCHLI manbasi.
+        // FromGeographic'da longitude'dan aniqlash o'rniga shu ishlatiladi, aks holda
+        // ko'rinish zona chegarasiga (masalan lon=66 yoki 72) yaqinlashganda ToGeographic
+        // (easting bo'yicha) va FromGeographic (lon bo'yicha) turli zona tanlab, uniform
+        // transformni buzardi va xarita chetga siljib ko'rinmay qolardi.
+        private int _autoLastZone; // 0 = hali aniqlanmagan
+
         /// <param name="zone">
         /// Gauss-Kruger zonasi (masalan, 12). 0 yoki manfiy bo'lsa — AVTO-ZONA rejimi
         /// (zona easting/longitude'dan avtomatik aniqlanadi, O'zbekiston uchun 10..13).
@@ -300,8 +308,16 @@ namespace GoogleSatelliteCAD.Projection
 
         public GeoPoint ToGeographic(double x, double y)
         {
-            // Avto-rejimda zonani chizma easting'ining prefiksidan aniqlaymiz.
-            TransverseMercator tm = _auto ? TmForZone(ZoneFromEasting(x)) : _tm;
+            // Avto-rejimda zonani chizma easting'ining prefiksidan aniqlaymiz (ishonchli manba)
+            // va uni keshlaymiz — FromGeographic shu zonadan foydalanadi (izchillik uchun).
+            TransverseMercator tm;
+            if (_auto)
+            {
+                int zone = ZoneFromEasting(x);
+                _autoLastZone = zone;
+                tm = TmForZone(zone);
+            }
+            else tm = _tm;
 
             // 1. GK (Krassovskiy) -> Krassovskiy lat/lon.
             tm.Inverse(x, y, out double lonK, out double latK);
@@ -319,8 +335,17 @@ namespace GoogleSatelliteCAD.Projection
 
         public DrawingPoint FromGeographic(double lon, double lat)
         {
-            // Avto-rejimda zonani geografik longitude'dan aniqlaymiz.
-            TransverseMercator tm = _auto ? TmForZone(ZoneFromLon(lon)) : _tm;
+            // Avto-rejimda: yangilash oqimida ToGeographic (easting'dan zona) doim oldin
+            // chaqilgani uchun o'sha aniqlangan zonani ishlatamiz — bu ikki yo'nalish
+            // izchilligini ta'minlaydi. Zaxira sifatida (agar hali aniqlanmagan bo'lsa)
+            // longitude'dan aniqlaymiz.
+            TransverseMercator tm;
+            if (_auto)
+            {
+                int zone = _autoLastZone > 0 ? _autoLastZone : ZoneFromLon(lon);
+                tm = TmForZone(zone);
+            }
+            else tm = _tm;
 
             // 1. WGS84 geografik -> geosentrik.
             GeodeticTransform.GeographicToGeocentric(Ellipsoid.WGS84, lon, lat,
