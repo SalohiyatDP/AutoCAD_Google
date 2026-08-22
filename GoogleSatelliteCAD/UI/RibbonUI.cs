@@ -53,8 +53,6 @@ namespace GoogleSatelliteCAD.UI
                     "Google Satellite fon xaritasini yoqish. Allaqachon yoqilgan bo'lsa, " +
                     "ko'rinib turgan hududni qayta yuklaydi/yangilaydi (GSATON)",
                     new RelayCommand(() => SendCommand("GSATON "))));
-                source.Items.Add(CreateButton("Go to\nKosonsoy", "Ko'rinishni Namangan viloyati, Kosonsoy tumaniga olib borish (GSATHOME)",
-                    new RelayCommand(() => SendCommand("GSATHOME "))));
                 source.Items.Add(CreateButton("Satellite\nOFF", "Fon xaritasini o'chirish (GSATOFF)",
                     new RelayCommand(() => SendCommand("GSATOFF "))));
                 source.Items.Add(new RibbonSeparator());

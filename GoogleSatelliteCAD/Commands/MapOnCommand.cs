@@ -37,20 +37,5 @@ namespace GoogleSatelliteCAD.Commands
             else
                 PluginContext.Instance.Enable();
         }
-
-        /// <summary>
-        /// GSATHOME buyrug'i — ko'rinishni Namangan viloyati, Kosonsoy tumaniga olib boradi
-        /// va xaritani yoqadi. Chizma bo'sh yoki ko'rinish hududdan tashqarida bo'lganda
-        /// xaritani tez ko'rsatish uchun qulay.
-        /// </summary>
-        [CommandMethod("GSATHOME", CommandFlags.Modal)]
-        public void GoHome()
-        {
-            Document doc = Application.DocumentManager.MdiActiveDocument;
-            if (doc == null) return;
-
-            doc.Editor.WriteMessage("\nKosonsoy tumaniga (Namangan vil.) o'tilmoqda...");
-            PluginContext.Instance.GoHome();
-        }
     }
 }

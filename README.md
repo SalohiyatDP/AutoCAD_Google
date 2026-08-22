@@ -18,7 +18,7 @@ har doim xarita ustida turadi.
 - Koordinata tizimlari: **Web Mercator (EPSG:3857)** va **Pulkovo 1942 Gauss-Krüger** —
   butun O'zbekiston uchun **10N..13N zonalari** (avto-zona aniqlash bilan).
 - Asinxron + parallel tile yuklash, disk keshi, subdomen aylanishi va qayta urinish.
-- "Google Maps" Ribbon yorlig'i va bir bosishda Kosonsoy tumaniga o'tish.
+- "Google Maps" Ribbon yorlig'i orqali boshqarish.
 - Sozlamalar (WPF) va About oynasi.
 
 ---
@@ -30,7 +30,6 @@ har doim xarita ustida turadi.
 | `GSATON` | Fon xaritani yoqadi. Yoqilgan bo'lsa — ko'rinishni yangilaydi (REFRESH). |
 | `GSATREFRESH` | Ko'rinib turgan hududni qayta yuklaydi (yangilaydi). |
 | `GSATOFF` | Fon xaritani o'chiradi (disk keshi saqlanadi). |
-| `GSATHOME` | Ko'rinishni Namangan vil., Kosonsoy tumaniga olib boradi va yoqadi. |
 | `GSATCLEAR` | Disk keshini (yuklangan tilelarni) tozalaydi. |
 
 DLL `NETLOAD` orqali yuklanadi.
@@ -41,7 +40,6 @@ DLL `NETLOAD` orqali yuklanadi.
 ## Ribbon menyu — "Google Maps"
 
 - **Satellite ON (REFRESH)** — yoqish; yoqilgan bo'lsa, ko'rinishni yangilaydi.
-- **Go to Kosonsoy** — Namangan vil., Kosonsoy tumaniga o'tish (`GSATHOME`).
 - **Satellite OFF** — o'chirish.
 - **Clear Cache** — keshni tozalash.
 - **Coordinate System** — koordinata tizimi va sozlamalar oynasi.
@@ -86,7 +84,18 @@ bilan qoplanadi (har zona 6° kenglikda). Plagin bu zonalarning barchasini qo'll
 > Noto'g'ri tanlansa, xarita mos kelmaydi.
 
 > Chizma tanlangan tizimda georeferensiyalangan bo'lishi kerak. Bo'sh chizma (0,0 atrofida)
-> uchun `GSATHOME` orqali Kosonsoy hududiga o'ting.
+> bo'lsa xarita ko'rinmaydi — O'zbekiston hududidagi georeferensiyalangan chizmani oching.
+
+### Xarita ko'rinmayapti? (koordinata tizimi mos kelmasligi)
+
+Eng ko'p uchraydigan sabab — **noto'g'ri koordinata tizimi tanlangani**. Masalan, chizma
+Pulkovo koordinatalarida (easting ~12,5xx,xxx), lekin **Web Mercator** tanlangan bo'lsa,
+o'sha qiymat mercator metr sifatida talqin qilinib, ko'rinish O'zbekistondan tashqariga
+(lon ~112°E) tushadi va xarita **umuman ko'rinmaydi**.
+
+Bunday holatda plagin buyruq qatorida (va `plugin.log` da) **mos tizimni avtomatik taklif
+qiladi** — o'sha tavsiyaga amal qilib, Ribbon → **Coordinate System** orqali to'g'ri tizimni
+tanlang. Ko'p hollarda **Pulkovo GK AVTO-ZONA** (standart) barcha zonalar uchun ishlaydi.
 
 ---
 
@@ -103,7 +112,7 @@ Plagin faqat **O'zbekiston Respublikasi** chegara to'rtburchagi ichidagi tilelar
 ```
 GoogleSatelliteCAD/
 ├── Core/         PluginEntry (IExtensionApplication), ConfigManager, PluginContext, Logger
-├── Commands/     GSATON/GSATREFRESH/GSATHOME, GSATOFF, GSATCLEAR
+├── Commands/     GSATON/GSATREFRESH, GSATOFF, GSATCLEAR
 ├── Projection/   Ellipsoid, Mercator, Pulkovo1942 (Gauss-Kruger + datum), CoordinateTransform, IProjection
 ├── TileEngine/   TileSystem, TileCache, TileDownloader, TileManager (+ interfeyslar)
 ├── Drawing/      LayerManager, RasterManager, ViewportTracker
@@ -152,9 +161,8 @@ GoogleSatelliteCAD/
 3. Ribbon **Google Maps → Coordinate System** orqali tizimni tanlang (odatiy: Pulkovo GK
    **AVTO-ZONA** — butun O'zbekiston; yoki aniq zona 10N..13N, yoxud Web Mercator).
 4. **Satellite ON (REFRESH)** bosing yoki `GSATON` kiriting.
-5. Bo'sh chizmada bo'lsangiz — **Go to Kosonsoy** (`GSATHOME`) bilan hududga o'ting.
-6. Zoom/Pan qiling — xarita ko'rinayotgan hududga avtomatik moslashadi.
-7. Yangilash kerak bo'lsa — **Satellite ON (REFRESH)** yoki `GSATREFRESH`.
+5. Zoom/Pan qiling — xarita ko'rinayotgan hududga avtomatik moslashadi.
+6. Yangilash kerak bo'lsa — **Satellite ON (REFRESH)** yoki `GSATREFRESH`.
 
 ---
 
