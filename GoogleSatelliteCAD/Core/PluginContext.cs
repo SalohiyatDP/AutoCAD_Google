@@ -468,6 +468,11 @@ namespace GoogleSatelliteCAD.Core
                 CoordinateSystemType.Pulkovo1942_GK_Zone11N_28461,
                 CoordinateSystemType.Pulkovo1942_GK_Zone10N_28460,
                 CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463,
+                // WGS 84 / UTM zonalari (easting ~5xx,xxx — Pulkovo prefikssizga geometrik yaqin).
+                CoordinateSystemType.WGS84_UTM_Zone42N,
+                CoordinateSystemType.WGS84_UTM_Zone41N,
+                CoordinateSystemType.WGS84_UTM_Zone43N,
+                CoordinateSystemType.WGS84_UTM_Zone40N,
             };
 
             foreach (CoordinateSystemType type in candidates)

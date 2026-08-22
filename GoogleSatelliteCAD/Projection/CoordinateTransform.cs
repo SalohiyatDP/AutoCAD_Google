@@ -33,7 +33,20 @@ namespace GoogleSatelliteCAD.Projection
                     return new CoordinateTransform(new GeographicProjection());
 
                 case CoordinateSystemType.WGS84_UTM:
-                    return new CoordinateTransform(new UtmProjection(0)); // avto zona
+                    return new CoordinateTransform(new UtmProjection(0)); // avto zona (ichki)
+
+                // ---- WGS 84 / UTM zonalari (O'zbekiston 40N..43N), easting ~5xx,xxx ----
+                case CoordinateSystemType.WGS84_UTM_Zone40N:
+                    return new CoordinateTransform(new UtmProjection(40));
+
+                case CoordinateSystemType.WGS84_UTM_Zone41N:
+                    return new CoordinateTransform(new UtmProjection(41));
+
+                case CoordinateSystemType.WGS84_UTM_Zone42N:
+                    return new CoordinateTransform(new UtmProjection(42));
+
+                case CoordinateSystemType.WGS84_UTM_Zone43N:
+                    return new CoordinateTransform(new UtmProjection(43));
 
                 case CoordinateSystemType.WebMercator_3857:
                     return new CoordinateTransform(new WebMercatorProjection());

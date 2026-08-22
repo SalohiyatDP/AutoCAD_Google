@@ -386,7 +386,9 @@ namespace GoogleSatelliteCAD.Projection
             }
         }
 
-        public string Name => _zoneFixed ? $"WGS84 / UTM zona {_zone}{(_northern ? "N" : "S")}" : "WGS84 / UTM (avto zona)";
+        public string Name => _zoneFixed
+            ? $"WGS84 / UTM zona {_zone}{(_northern ? "N" : "S")} (EPSG:{(_northern ? 32600 : 32700) + _zone})"
+            : "WGS84 / UTM (avto zona)";
 
         private void BuildTm()
         {
@@ -400,8 +402,8 @@ namespace GoogleSatelliteCAD.Projection
         {
             if (_tm == null)
             {
-                // Zona hali aniqlanmagan — xavfsiz standart (zona 12).
-                _zone = 12;
+                // Zona hali aniqlanmagan — O'zbekiston markaziga mos xavfsiz standart (UTM 42N).
+                _zone = 42;
                 BuildTm();
             }
             _tm.Inverse(x, y, out double lon, out double lat);

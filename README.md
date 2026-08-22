@@ -15,8 +15,9 @@ har doim xarita ustida turadi.
 - Google sun'iy yo'ldosh tasvirini DWG fonida real vaqtda ko'rsatish.
 - Zoom/Pan paytida avtomatik yangilanish (ekranda ko'rinayotgan hudud bo'yicha).
 - **Faqat O'zbekiston Respublikasi hududi** uchun tile yuklash (butun dunyo yuklanmaydi).
-- Koordinata tizimlari: **Web Mercator (EPSG:3857)** va **Pulkovo 1942 Gauss-Krüger** —
-  butun O'zbekiston uchun **10N..13N zonalari** (avto-zona aniqlash bilan).
+- Koordinata tizimlari: **Pulkovo 1942 Gauss-Krüger** (butun O'zbekiston uchun **10N..13N**
+  zonalari, avto-zona bilan), **WGS 84 / UTM 40N..43N** (toposyomka, easting ~5xx,xxx) va
+  **Web Mercator (EPSG:3857)**.
 - Asinxron + parallel tile yuklash, disk keshi, subdomen aylanishi va qayta urinish.
 - "Google Maps" Ribbon yorlig'i orqali boshqarish.
 - Sozlamalar (WPF) va About oynasi.
@@ -57,6 +58,7 @@ bilan qoplanadi (har zona 6° kenglikda). Plagin bu zonalarning barchasini qo'll
 | **Pulkovo 1942 / GK AVTO-ZONA (10N..13N)** — **standart** | Butun O'zbekiston, zona avtomatik | prefiksli (~z,5xx,xxx) |
 | **Pulkovo 1942 / GK Zona 10N/11N/12N/13N (EPSG:28410–28413)** | Aniq zona, prefiksli easting | ~**10..13,5xx,xxx** |
 | **Pulkovo 1942 / GK Zona 10N/11N/12N/13N (EPSG:28460–28463)** | Qurilma/GPS eksporti, prefikssiz | ~**5xx,xxx** |
+| **WGS 84 / UTM Zona 40N/41N/42N/43N (EPSG:32640–32643)** | Toposyomka, GNSS/GPS (WGS84) | ~**5xx,xxx** |
 | **WGS 1984 Web Mercator (EPSG:3857)** | Umumiy/keng hudud | metr (~7,7xx,xxx) |
 
 **Gauss-Krüger zonalari va markaziy meridianlari (O'zbekiston):**
@@ -68,6 +70,15 @@ bilan qoplanadi (har zona 6° kenglikda). Plagin bu zonalarning barchasini qo'll
 | 12N  | 69°E              | 66°–72°E          | 28412          | 28462           |
 | 13N  | 75°E              | 72°–78°E          | 28413          | 28463           |
 
+**WGS 84 / UTM zonalari (O'zbekiston) — toposyomka uchun (easting ~5xx,xxx):**
+
+| UTM zona | Markaziy meridian | Longitude qamrovi | EPSG  |
+|----------|-------------------|-------------------|-------|
+| 40N      | 57°E              | 54°–60°E          | 32640 |
+| 41N      | 63°E              | 60°–66°E          | 32641 |
+| 42N      | 69°E              | 66°–72°E          | 32642 |
+| 43N      | 75°E              | 72°–78°E          | 32643 |
+
 - **AVTO-ZONA (standart, tavsiya etiladi)** — zonani chizma easting'idagi **prefiks**dan
   avtomatik aniqlaydi (masalan easting ~11,5xx,xxx → zona 11, ~12,5xx,xxx → zona 12). Butun
   O'zbekiston bo'ylab bitta tanlov bilan ishlaydi. Faqat **prefiksli (zonalangan)** easting
@@ -76,6 +87,11 @@ bilan qoplanadi (har zona 6° kenglikda). Plagin bu zonalarning barchasini qo'll
   = `zona·1 000 000 + 500 000` (easting ~z,5xx,xxx), WGS84'ga 7-parametrli (Bursa-Wolf) datum.
 - **Prefikssiz GK zonalari (EPSG:2846x)** — xuddi shu, lekin false easting **500 000**
   (easting ~5xx,xxx). Ko'pincha GPS/geodezik qurilma eksportlarida ishlatiladi.
+- **WGS 84 / UTM zonalari (EPSG:326xx)** — WGS84 ellipsoidi (datum o'tkazish shart emas),
+  k₀ = 0.9996, false easting **500 000** (easting ~5xx,xxx). Toposyomka va GNSS/GPS
+  eksportlari uchun qulay. Markaziy meridianlari GK zonalariga mos (57/63/69/75°E), lekin
+  ellipsoid/masshtab boshqacha. **DIQQAT:** UTM easting zonani kodlab bermaydi (barcha zonalarda
+  ~5xx,xxx), shu sababli UTM uchun **aniq zonani qo'lda tanlash kerak** (avto-zona yo'q).
 - **Web Mercator** — chizma birliklari = Web Mercator metrlari (Google/ArcGIS bilan bir xil).
   Masshtab 1/cos(kenglik); Toshkent kengligida ~1.33× (o'lcham biroz kattaroq ko'rinadi).
 

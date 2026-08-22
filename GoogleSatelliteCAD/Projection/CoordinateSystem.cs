@@ -51,7 +51,19 @@ namespace GoogleSatelliteCAD.Projection
         Pulkovo1942_GK_Zone11N_28461 = 10,
 
         /// <summary>Pulkovo 1942 / GK zona 13N, prefikssiz easting (EPSG:28463, easting ~5xx,xxx).</summary>
-        Pulkovo1942_GK_Zone13N_28463 = 11
+        Pulkovo1942_GK_Zone13N_28463 = 11,
+
+        /// <summary>WGS 84 / UTM zona 40N (EPSG:32640, markaziy meridian 57°E, easting ~5xx,xxx).</summary>
+        WGS84_UTM_Zone40N = 12,
+
+        /// <summary>WGS 84 / UTM zona 41N (EPSG:32641, markaziy meridian 63°E, easting ~5xx,xxx).</summary>
+        WGS84_UTM_Zone41N = 13,
+
+        /// <summary>WGS 84 / UTM zona 42N (EPSG:32642, markaziy meridian 69°E, easting ~5xx,xxx).</summary>
+        WGS84_UTM_Zone42N = 14,
+
+        /// <summary>WGS 84 / UTM zona 43N (EPSG:32643, markaziy meridian 75°E, easting ~5xx,xxx).</summary>
+        WGS84_UTM_Zone43N = 15
     }
 
     /// <summary>

@@ -140,6 +140,10 @@ namespace GoogleSatelliteCAD.Core
                 case CoordinateSystemType.Pulkovo1942_GK_Zone11N_28461:
                 case CoordinateSystemType.Pulkovo1942_GK_Zone12N_28462:
                 case CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463:
+                case CoordinateSystemType.WGS84_UTM_Zone40N:
+                case CoordinateSystemType.WGS84_UTM_Zone41N:
+                case CoordinateSystemType.WGS84_UTM_Zone42N:
+                case CoordinateSystemType.WGS84_UTM_Zone43N:
                     return true;
                 default:
                     return false;

@@ -92,6 +92,16 @@ namespace GoogleSatelliteCAD.UI
             AddCrsItem(CoordinateSystemType.Pulkovo1942_GK_Zone13N_28463,
                 "Pulkovo 1942 / GK Zona 13N (EPSG:28463, easting ~5xx,xxx)", s.CoordinateSystem);
 
+            // WGS 84 / UTM zonalari (O'zbekiston 40N..43N) — easting ~5xx,xxx (toposyomka).
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone40N,
+                "WGS 84 / UTM Zona 40N (EPSG:32640, MM 57°E, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone41N,
+                "WGS 84 / UTM Zona 41N (EPSG:32641, MM 63°E, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone42N,
+                "WGS 84 / UTM Zona 42N (EPSG:32642, MM 69°E, easting ~5xx,xxx)", s.CoordinateSystem);
+            AddCrsItem(CoordinateSystemType.WGS84_UTM_Zone43N,
+                "WGS 84 / UTM Zona 43N (EPSG:32643, MM 75°E, easting ~5xx,xxx)", s.CoordinateSystem);
+
             // Umumiy/keng hudud uchun.
             AddCrsItem(CoordinateSystemType.WebMercator_3857,
                 "WGS 1984 Web Mercator (EPSG:3857)", s.CoordinateSystem);
