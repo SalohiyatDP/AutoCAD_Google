@@ -96,6 +96,18 @@ if exist "%SOURCE_DIR%\GoogleSatelliteCAD.pdb" (
     copy /y "%SOURCE_DIR%\GoogleSatelliteCAD.pdb" "%CONTENTS_DIR%\" >nul
 )
 
+:: .NET 8 build (2025-2026) DLL — agar yig'ilgan bo'lsa, uni ham bundle ichiga qo'shamiz.
+:: Shunda bitta bundle 2021-2024 (.NET Framework) VA 2025-2026 (.NET 8) da ishlaydi;
+:: PackageContents.xml versiyaga qarab mos DLL'ni tanlaydi.
+set "SOURCE_DIR_2025=%~dp0build-2025\bin\Release"
+if exist "%SOURCE_DIR_2025%\GoogleSatelliteCAD_2025.dll" (
+    copy /y "%SOURCE_DIR_2025%\GoogleSatelliteCAD_2025.dll" "%CONTENTS_DIR%\" >nul
+    echo  [OK] GoogleSatelliteCAD_2025.dll ^(2025-2026^) bundle ichiga qo'shildi.
+) else (
+    echo  [i] GoogleSatelliteCAD_2025.dll topilmadi ^(faqat 2021-2024 o'rnatiladi^).
+    echo      2025-2026 uchun: dotnet build build-2025\GoogleSatelliteCAD.2025.csproj -c Release
+)
+
 echo  [OK] Bundle o'rnatildi: %BUNDLE_DIR%
 echo.
 
