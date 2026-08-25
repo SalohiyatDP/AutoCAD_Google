@@ -35,11 +35,12 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
     <!--
-      AutoCAD 2025 o'rnatilgan papkasi (managed .NET 8 assembly'lar shu yerda).
-      Boshqa joyda bo'lsa: dotnet build ... /p:AutoCAD2025Path="D:\...\AutoCAD 2025\"
-      Vertikal mahsulot uchun ham o'sha mahsulotning 2025 papkasini bering.
+      AutoCAD 2025 managed .NET 8 reference assembly'lari.
+      Standart: repodagi ObjectARX_2025_Windows papkasi (5 ta DLL shu yerga qo'yilgan) —
+      shuning uchun hech qanday qo'shimcha yo'l bermasdan `dotnet build` ishlaydi.
+      Boshqa joyda bo'lsa bekor qiling: dotnet build ... /p:AutoCAD2025Path="D:\...\AutoCAD 2025\"
     -->
-    <AutoCAD2025Path Condition="'$(AutoCAD2025Path)' == ''">C:\Program Files\Autodesk\AutoCAD 2025\</AutoCAD2025Path>
+    <AutoCAD2025Path Condition="'$(AutoCAD2025Path)' == ''">$(MSBuildThisFileDirectory)..\ObjectARX_2025_Windows\</AutoCAD2025Path>
   </PropertyGroup>
 
   <!-- Manba fayllar ../GoogleSatelliteCAD dan olinadi (obj/bin chiqarib tashlanadi). -->
@@ -57,17 +58,17 @@
   -->
   <ItemGroup>
     <Reference Include="acdbmgd">
-      <HintPath>$(AutoCAD2025Path)acdbmgd.dll</HintPath>
+      <HintPath>$(AutoCAD2025Path)AcDbMgd.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="acmgd">
-      <HintPath>$(AutoCAD2025Path)acmgd.dll</HintPath>
+      <HintPath>$(AutoCAD2025Path)AcMgd.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="accoremgd">
-      <HintPath>$(AutoCAD2025Path)accoremgd.dll</HintPath>
+      <HintPath>$(AutoCAD2025Path)AcCoreMgd.dll</HintPath>
       <Private>False</Private>
       <SpecificVersion>False</SpecificVersion>
     </Reference>
