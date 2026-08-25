@@ -2,11 +2,18 @@
 
   <!--
     ============================================================================
-    AutoCAD 2025 (.NET 8) uchun GoogleSatelliteCAD build'i.
-    ORIGINAL loyiha (../GoogleSatelliteCAD/GoogleSatelliteCAD.csproj) o'zgartirilmagan —
-    u AutoCAD 2018-2024 + Mechanical 2021 (.NET Framework 4.8) uchun ishlaydi.
-    Bu loyiha AYNAN SHU manba fayllarni .NET 8 ga qayta kompilyatsiya qiladi.
-    Natija: GoogleSatelliteCAD_2025.dll  (bundle Contents ichiga qo'yiladi).
+    AutoCAD 2025-2026 (.NET 8) uchun GoogleSatelliteCAD build'i.
+    Barcha vertikallar (Mechanical, Civil 3D, Map 3D, Architecture, MEP, Electrical,
+    Plant 3D, Raster Design) 2025-2026 relizlarini ham qamrab oladi.
+
+    ASOSIY loyiha (../GoogleSatelliteCAD/GoogleSatelliteCAD.csproj) AutoCAD 2021-2024
+    (.NET Framework 4.8) uchun. Bu loyiha AYNAN SHU manba fayllarni .NET 8 ga qayta
+    kompilyatsiya qiladi (**/*.cs glob orqali — yangi fayllar avtomatik qo'shiladi).
+    Natija: GoogleSatelliteCAD_2025.dll  (bundle Contents ichiga qo'yiladi; 2025 va 2026).
+
+    Eslatma: AutoCAD.NET 25.0.0 assembly'lari 2026 (R25.1) da ham oldinga mos yuklanadi.
+    Agar 2026 uchun aynan o'sha yil paketi kerak bo'lsa, PackageReference versiyasini
+    mos ravishda ko'taring.
     ============================================================================
   -->
 
