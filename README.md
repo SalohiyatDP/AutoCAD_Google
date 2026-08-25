@@ -222,14 +222,22 @@ fayllar**dan kompilyatsiya bo'ladi (kodni ikki marta yozish shart emas).
 
 ### B) AutoCAD 2025–2026 (.NET 8)
 
-1. .NET 8 SDK o'rnatilgan bo'lsin.
+1. **.NET 8 SDK** va **AutoCAD 2025** o'rnatilgan bo'lsin (managed DLL'lar o'sha papkadan olinadi).
    ```
+   :: Standart yo'l: C:\Program Files\Autodesk\AutoCAD 2025\
    dotnet build build-2025\GoogleSatelliteCAD.2025.csproj -c Release
-   ```
-2. Natija: `GoogleSatelliteCAD_2025.dll` (AutoCAD.NET 25.x NuGet paketidan referens oladi).
 
-> AutoCAD assembly'lari (acmgd, acdbmgd, accoremgd, AdWindows, AcWindows) **Copy Local = False**;
-> .NET 8 build'ida `AutoCAD.NET` NuGet paketi `runtime` aktivlarini chiqishga nusxalamaydi.
+   :: AutoCAD boshqa joyda bo'lsa:
+   dotnet build build-2025\GoogleSatelliteCAD.2025.csproj -c Release ^
+     /p:AutoCAD2025Path="D:\Programs\Autodesk\AutoCAD 2025\"
+   ```
+2. Natija: `build-2025\bin\Release\GoogleSatelliteCAD_2025.dll`.
+
+> **Nega NuGet emas?** AutoCAD `AutoCAD.NET` NuGet metapaketining versiya bog'liqliklari
+> ko'pincha mos kelmaydi (masalan `AutoCAD.NET.Core 25.0.0-V058` nuget.org'da yo'q → `NU1102`).
+> Shuning uchun .NET 8 build'i ham asosiy loyiha kabi **o'rnatilgan AutoCAD 2025 DLL'lari**dan
+> to'g'ridan-to'g'ri referens oladi. Faqat `System.Management` NuGet'dan keladi (u muammosiz).
+> AutoCAD assembly'lari (acmgd, acdbmgd, accoremgd, AdWindows, AcWindows) **Copy Local = False**.
 
 
 ---
