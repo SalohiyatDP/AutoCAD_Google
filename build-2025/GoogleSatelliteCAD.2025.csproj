@@ -2,11 +2,18 @@
 
   <!--
     ============================================================================
-    AutoCAD 2025 (.NET 8) uchun GoogleSatelliteCAD build'i.
-    ORIGINAL loyiha (../GoogleSatelliteCAD/GoogleSatelliteCAD.csproj) o'zgartirilmagan —
-    u AutoCAD 2018-2024 + Mechanical 2021 (.NET Framework 4.8) uchun ishlaydi.
-    Bu loyiha AYNAN SHU manba fayllarni .NET 8 ga qayta kompilyatsiya qiladi.
-    Natija: GoogleSatelliteCAD_2025.dll  (bundle Contents ichiga qo'yiladi).
+    AutoCAD 2025-2026 (.NET 8) uchun GoogleSatelliteCAD build'i.
+    Barcha vertikallar (Mechanical, Civil 3D, Map 3D, Architecture, MEP, Electrical,
+    Plant 3D, Raster Design) 2025-2026 relizlarini ham qamrab oladi.
+
+    ASOSIY loyiha (../GoogleSatelliteCAD/GoogleSatelliteCAD.csproj) AutoCAD 2021-2024
+    (.NET Framework 4.8) uchun. Bu loyiha AYNAN SHU manba fayllarni .NET 8 ga qayta
+    kompilyatsiya qiladi (**/*.cs glob orqali — yangi fayllar avtomatik qo'shiladi).
+    Natija: GoogleSatelliteCAD_2025.dll  (bundle Contents ichiga qo'yiladi; 2025 va 2026).
+
+    Eslatma: AutoCAD.NET 25.0.0 assembly'lari 2026 (R25.1) da ham oldinga mos yuklanadi.
+    Agar 2026 uchun aynan o'sha yil paketi kerak bo'lsa, PackageReference versiyasini
+    mos ravishda ko'taring.
     ============================================================================
   -->
 
@@ -26,6 +33,14 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <!-- Manba tarkibida Properties\AssemblyInfo.cs bor, shuning uchun avtomatik generatsiya o'chirilgan. -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!--
+      AutoCAD 2025 managed .NET 8 reference assembly'lari.
+      Standart: repodagi ObjectARX_2025_Windows papkasi (5 ta DLL shu yerga qo'yilgan) —
+      shuning uchun hech qanday qo'shimcha yo'l bermasdan `dotnet build` ishlaydi.
+      Boshqa joyda bo'lsa bekor qiling: dotnet build ... /p:AutoCAD2025Path="D:\...\AutoCAD 2025\"
+    -->
+    <AutoCAD2025Path Condition="'$(AutoCAD2025Path)' == ''">$(MSBuildThisFileDirectory)..\ObjectARX_2025_Windows\</AutoCAD2025Path>
   </PropertyGroup>
 
   <!-- Manba fayllar ../GoogleSatelliteCAD dan olinadi (obj/bin chiqarib tashlanadi). -->
@@ -34,12 +49,43 @@
              Exclude="..\GoogleSatelliteCAD\obj\**\*.cs;..\GoogleSatelliteCAD\bin\**\*.cs" />
   </ItemGroup>
 
-  <!-- AutoCAD 2025 .NET API (net8.0-windows). runtime -> chiqishga nusxalanmaydi. -->
+  <!--
+    AutoCAD 2025 managed assembly'lari — MAHALLIY o'rnatilgan papkadan (net8.0).
+    Autodesk NuGet paketi (AutoCAD.NET) versiya bog'liqliklari ko'pincha mos kelmaydi
+    (masalan AutoCAD.NET.Core 25.0.0-V058 nuget.org'da yo'q), shuning uchun asosiy loyiha
+    kabi to'g'ridan-to'g'ri o'rnatilgan DLL'lardan referens olamiz.
+    MUHIM: Private=False (Copy Local = False) — AutoCAD ichida nizolarni oldini oladi.
+  -->
   <ItemGroup>
-    <PackageReference Include="AutoCAD.NET" Version="25.0.0">
-      <ExcludeAssets>runtime</ExcludeAssets>
-    </PackageReference>
-    <!-- .NET 8 da System.Management NuGet paketi orqali keladi. -->
+    <Reference Include="acdbmgd">
+      <HintPath>$(AutoCAD2025Path)AcDbMgd.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="acmgd">
+      <HintPath>$(AutoCAD2025Path)AcMgd.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="accoremgd">
+      <HintPath>$(AutoCAD2025Path)AcCoreMgd.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="AdWindows">
+      <HintPath>$(AutoCAD2025Path)AdWindows.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="AcWindows">
+      <HintPath>$(AutoCAD2025Path)AcWindows.dll</HintPath>
+      <Private>False</Private>
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+  </ItemGroup>
+
+  <!-- .NET 8 da System.Management (WMI orqali Machine ID) NuGet paketi orqali keladi. -->
+  <ItemGroup>
     <PackageReference Include="System.Management" Version="8.0.0" />
   </ItemGroup>
 

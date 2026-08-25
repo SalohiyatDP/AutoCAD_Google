@@ -1,12 +1,43 @@
 # GoogleSatelliteCAD
 
-**AutoCAD Mechanical 2021** uchun **Google Satellite** sun'iy yo'ldosh fon xarita plagini.
-ArcGIS Desktop'dagi `google.lyr` kabi ishlaydi: DWG chizmasi ostida Google sun'iy yo'ldosh
-tasviri fon sifatida ko'rinadi va zoom/pan paytida avtomatik yangilanadi. Chizma obyektlari
-har doim xarita ustida turadi.
+**AutoCAD 2021–2026** (va uning barcha vertikal mahsulotlari) uchun **Google Satellite**
+sun'iy yo'ldosh fon xarita plagini. ArcGIS Desktop'dagi `google.lyr` kabi ishlaydi: DWG
+chizmasi ostida Google sun'iy yo'ldosh tasviri fon sifatida ko'rinadi va zoom/pan paytida
+avtomatik yangilanadi. Chizma obyektlari har doim xarita ustida turadi.
 
-> **Platforma:** C# · .NET Framework 4.8 · AutoCAD .NET API · Visual Studio 2022 · x64
+> **Platforma:** C# · x64 · AutoCAD .NET API · Visual Studio 2022
+> **Runtime:** AutoCAD 2021–2024 → .NET Framework 4.8; AutoCAD 2025–2026 → .NET 8
 > **Hudud:** O'zbekiston Respublikasi
+
+---
+
+## Qo'llab-quvvatlanadigan Autodesk mahsulotlari (2021+)
+
+Plagin AutoCAD .NET API'sidan foydalanadi — shuning uchun **standart AutoCAD** hamda
+undan kelib chiqqan **vertikal mahsulotlar**ning barchasida ishlaydi (bir yil uchun barchasi
+bir xil API'ni ulashadi):
+
+- **AutoCAD** 2021, 2022, 2023, 2024, 2025, 2026
+- **AutoCAD Mechanical** 2021–2026
+- **AutoCAD Civil 3D** 2021–2026
+- **AutoCAD Map 3D** 2021–2026
+- **AutoCAD Architecture** 2021–2026
+- **AutoCAD MEP** 2021–2026
+- **AutoCAD Electrical** 2021–2026
+- **AutoCAD Plant 3D** 2021–2026
+- **AutoCAD Raster Design** 2021–2026
+
+Ikki xil runtime bo'yicha ikkita DLL chiqariladi va bundle (`PackageContents.xml`)
+mos DLL'ni versiya bo'yicha avtomatik yuklaydi:
+
+| Relizlar | .NET runtime | Chiqariladigan DLL | Series (bundle) |
+|----------|--------------|--------------------|-----------------|
+| 2021–2024 | .NET Framework 4.8 | `GoogleSatelliteCAD.dll` | R24.0–R24.3 |
+| 2025–2026 | .NET 8 | `GoogleSatelliteCAD_2025.dll` | R25.0+ |
+
+> Plagin yuklanganda mezbon mahsulot nomi, versiyasi va runtime `plugin.log` ga yoziladi
+> (`HostProduct`). Reliz 2021 dan past bo'lsa ogohlantirish beriladi. Turli mahsulotlar bir xil
+> API/runtime'ga ega deb faraz qilinmaydi — yo'naltirish bundle darajasida amalga oshadi.
 
 ---
 
@@ -168,15 +199,44 @@ Uninstall.bat             (plaginni olib tashlaydi)
 
 ## Yig'ish (Build)
 
-1. `GoogleSatelliteCAD.sln` ni Visual Studio 2022 da oching.
-2. AutoCAD referens yo'lini tekshiring (standart: `C:\Program Files\Autodesk\AutoCAD 2021\`).
-   Boshqa joyda bo'lsa, `.csproj` dagi `AutoCADReferencePath` ni o'zgartiring yoki:
-   ```
-   msbuild GoogleSatelliteCAD.sln /p:Configuration=Release /p:Platform=x64 ^
-     /p:AutoCADReferencePath="D:\...\AutoCAD 2021\"
-   ```
-3. `Release | x64` da yig'ing → `GoogleSatelliteCAD\bin\x64\Release\GoogleSatelliteCAD.dll`.
+Ikki xil runtime bo'lgani uchun ikkita build mavjud. Ikkalasi ham **bir xil manba
+fayllar**dan kompilyatsiya bo'ladi (kodni ikki marta yozish shart emas).
 
+### A) AutoCAD 2021–2024 (.NET Framework 4.8)
+
+1. `GoogleSatelliteCAD/GoogleSatelliteCAD.csproj` — Visual Studio 2022 da oching.
+2. AutoCAD referens papkasini bering. `AcadVersion` (2021..2024) standart yo'lni tanlaydi,
+   yoki `AutoCADReferencePath` ni to'g'ridan-to'g'ri ko'rsating (vertikallar uchun papka
+   boshqacha bo'lishi mumkin):
+   ```
+   :: Standart AutoCAD 2024
+   msbuild GoogleSatelliteCAD\GoogleSatelliteCAD.csproj /p:Configuration=Release /p:Platform=x64 /p:AcadVersion=2024
+
+   :: Aniq papka bilan (masalan Mechanical yoki Civil 3D)
+   msbuild GoogleSatelliteCAD\GoogleSatelliteCAD.csproj /p:Configuration=Release /p:Platform=x64 ^
+     /p:AutoCADReferencePath="C:\Program Files\Autodesk\AutoCAD 2023\C3D\"
+   ```
+3. Natija: `GoogleSatelliteCAD\bin\x64\Release\GoogleSatelliteCAD.dll`.
+
+> Bitta 2021 ga qarshi yig'ilgan DLL 2022–2024 da ham ishlaydi (AutoCAD .NET API oldinga mos).
+
+### B) AutoCAD 2025–2026 (.NET 8)
+
+1. **.NET 8 SDK** va **AutoCAD 2025** o'rnatilgan bo'lsin (managed DLL'lar o'sha papkadan olinadi).
+   ```
+   :: Standart yo'l: C:\Program Files\Autodesk\AutoCAD 2025\
+   dotnet build build-2025\GoogleSatelliteCAD.2025.csproj -c Release
+
+   :: AutoCAD boshqa joyda bo'lsa:
+   dotnet build build-2025\GoogleSatelliteCAD.2025.csproj -c Release ^
+     /p:AutoCAD2025Path="D:\Programs\Autodesk\AutoCAD 2025\"
+   ```
+2. Natija: `build-2025\bin\Release\GoogleSatelliteCAD_2025.dll`.
+
+> **Nega NuGet emas?** AutoCAD `AutoCAD.NET` NuGet metapaketining versiya bog'liqliklari
+> ko'pincha mos kelmaydi (masalan `AutoCAD.NET.Core 25.0.0-V058` nuget.org'da yo'q → `NU1102`).
+> Shuning uchun .NET 8 build'i ham asosiy loyiha kabi **o'rnatilgan AutoCAD 2025 DLL'lari**dan
+> to'g'ridan-to'g'ri referens oladi. Faqat `System.Management` NuGet'dan keladi (u muammosiz).
 > AutoCAD assembly'lari (acmgd, acdbmgd, accoremgd, AdWindows, AcWindows) **Copy Local = False**.
 
 

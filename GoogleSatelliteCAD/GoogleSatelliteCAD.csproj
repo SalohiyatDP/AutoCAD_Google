@@ -14,13 +14,26 @@
     <Deterministic>true</Deterministic>
     <!--
       ===========================================================================
-      AutoCAD Mechanical 2021 boshqariladigan (managed) assembly'lar joylashgan papka.
-      Standart o'rnatish yo'li quyidagicha bo'ladi. Agar AutoCAD boshqa joyga
-      o'rnatilgan bo'lsa, ushbu qiymatni o'zgartiring yoki MSBuild'ga
-      /p:AutoCADReferencePath=... parametri orqali bering.
+      Bu loyiha AutoCAD 2021-2024 (.NET Framework 4.8) VA ularning barcha vertikal
+      mahsulotlari uchun bitta DLL ishlab chiqaradi: AutoCAD, Mechanical, Civil 3D,
+      Map 3D, Architecture, MEP, Electrical, Plant 3D, Raster Design.
+      (AutoCAD 2025-2026 = .NET 8 uchun alohida: ../build-2025/GoogleSatelliteCAD.2025.csproj.)
+
+      AutoCAD .NET API 2021-2024 oralig'ida oldinga mos (forward-compatible): 2021 ga
+      qarshi yig'ilgan DLL 2022/2023/2024 da ham yuklanadi.
+
+      Managed assembly'lar joylashgan papkani tanlash:
+        - AcadVersion (2021..2024) berilsa, standart yo'l shu versiyaga moslanadi.
+        - Yoki AutoCADReferencePath ni to'g'ridan-to'g'ri bering (vertikal mahsulotlar uchun
+          o'rnatish papkasi boshqacha bo'lishi mumkin). Masalan:
+            msbuild /p:AcadVersion=2024
+            msbuild /p:AutoCADReferencePath="C:\Program Files\Autodesk\AutoCAD 2022\"
+            msbuild /p:AutoCADReferencePath="C:\Program Files\Autodesk\ACADM 2021\"        (Mechanical)
+            msbuild /p:AutoCADReferencePath="C:\Program Files\Autodesk\AutoCAD 2023\C3D\"  (Civil 3D)
       ===========================================================================
     -->
-    <AutoCADReferencePath Condition=" '$(AutoCADReferencePath)' == '' ">C:\Program Files\Autodesk\AutoCAD 2021\</AutoCADReferencePath>
+    <AcadVersion Condition=" '$(AcadVersion)' == '' ">2021</AcadVersion>
+    <AutoCADReferencePath Condition=" '$(AutoCADReferencePath)' == '' ">C:\Program Files\Autodesk\AutoCAD $(AcadVersion)\</AutoCADReferencePath>
   </PropertyGroup>
 
   <!-- AutoCAD plaginlar 64-bitli bo'lishi shart (AutoCAD 2021 faqat x64) -->
@@ -65,7 +78,8 @@
     <Reference Include="System.Xaml" />
   </ItemGroup>
 
-  <!-- ============================ AutoCAD 2021 referenslari ============================
+  <!-- ============================ AutoCAD 2021-2024 referenslari ============================
+       $(AutoCADReferencePath) papkasidagi managed assembly'lar (barcha vertikallar uchun bir xil).
        MUHIM: Ushbu DLL'lar "Copy Local = False" (Private=False) bo'lishi shart.
        Aks holda AutoCAD ishga tushganda assembly nizolari (conflict) yuzaga keladi.
   -->
@@ -100,6 +114,7 @@
   <!-- ============================ Loyiha manba fayllari ============================ -->
   <ItemGroup>
     <Compile Include="Core\PluginEntry.cs" />
+    <Compile Include="Core\HostProduct.cs" />
     <Compile Include="Core\ConfigManager.cs" />
 
     <Compile Include="Licensing\LicenseCodec.cs" />

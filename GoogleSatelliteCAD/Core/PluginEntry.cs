@@ -28,6 +28,11 @@ namespace GoogleSatelliteCAD.Core
                 Logger.Info("====================================================");
                 Logger.Info("GoogleSatelliteCAD plagini yuklanmoqda...");
 
+                // Mezbon Autodesk mahsulotini (versiya, reliz yili, runtime) aniqlab jurnalga yozamiz.
+                // Plagin AutoCAD 2021-2026 va barcha vertikallarni (Mechanical, Civil 3D, Map 3D,
+                // Architecture, MEP, Electrical, Plant 3D, Raster Design) qo'llab-quvvatlaydi.
+                HostProduct.DetectAndLog();
+
                 // Sozlamalarni yuklaymiz (singleton tashabbuskori).
                 var _ = ConfigManager.Instance.Settings;
 

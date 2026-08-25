@@ -10,20 +10,23 @@
 
   <CompanyDetails Name="SalohiyatDP"/>
 
-  <!-- ================= AutoCAD 2018-2024 va Mechanical 2021 (.NET Framework 4.8) =================
-       R22.0 = 2018, R23.0 = 2019, R23.1 = 2020, R24.0 = 2021 (incl. Mechanical),
-       R24.1 = 2022, R24.2 = 2023, R24.3 = 2024.
-       Platform="AutoCAD*" verticallarni (Mechanical, Civil 3D, Map, MEP ...) ham qamrab oladi. -->
-  <Components Description="AutoCAD 2018-2024 / Mechanical 2021 (.NET Framework)">
-    <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R22.0" SeriesMax="R24.3"/>
+  <!-- ================= AutoCAD 2021-2024 (.NET Framework 4.8) =================
+       R24.0 = 2021, R24.1 = 2022, R24.2 = 2023, R24.3 = 2024.
+       Platform="AutoCAD*" barcha vertikallarni qamrab oladi: standart AutoCAD,
+       Mechanical, Civil 3D, Map 3D, Architecture, MEP, Electrical, Plant 3D, Raster Design.
+       Shu yildagi barcha vertikallar bir xil AutoCAD .NET API ishlatgani uchun bitta DLL yetarli. -->
+  <Components Description="AutoCAD 2021-2024 va vertikallar (.NET Framework 4.8)">
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R24.0" SeriesMax="R24.3"/>
     <ComponentEntry
         AppName="GoogleSatelliteCAD"
         ModuleName="./Contents/GoogleSatelliteCAD.dll"
         LoadOnAutoCADStartup="True"/>
   </Components>
 
-  <!-- ========================= AutoCAD 2025+ (.NET 8) ========================= -->
-  <Components Description="AutoCAD 2025+ (.NET 8)">
+  <!-- ================= AutoCAD 2025-2026 (.NET 8) =================
+       R25.0 = 2025, R25.1 = 2026. SeriesMax berilmagan -> 2026 va keyingi R25.x ham qamraladi.
+       Platform="AutoCAD*" bu yerda ham barcha vertikallarni qamrab oladi. -->
+  <Components Description="AutoCAD 2025-2026 va vertikallar (.NET 8)">
     <RuntimeRequirements OS="Win64" Platform="AutoCAD*" SeriesMin="R25.0"/>
     <ComponentEntry
         AppName="GoogleSatelliteCAD"
